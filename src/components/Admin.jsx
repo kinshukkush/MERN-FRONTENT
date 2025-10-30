@@ -57,7 +57,7 @@ export default function Admin() {
             <div key={index} className="stat-card" style={{
               padding: '20px',
               borderRadius: '16px',
-              background: 'white',
+              background: '#1e293b',
               boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
               display: 'flex',
               flexDirection: 'column',
@@ -186,7 +186,7 @@ export default function Admin() {
           </div>
 
           {/* Main Content */}
-          <div className="admin-content" style={{ padding: '24px', background: 'white', borderRadius: '16px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+          <div className="admin-content" style={{ padding: '24px', background: '#1e293b', borderRadius: '16px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
             <Outlet />
           </div>
         </div>

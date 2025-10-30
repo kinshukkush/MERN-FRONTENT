@@ -10,6 +10,17 @@ export default function Product() {
   const [loading, setLoading] = useState(true);
   const { user, cart, setCart } = useContext(AppContext);
 
+  // Dark mode theme
+  const theme = {
+    bg: '#0f172a',
+    bgSecondary: '#1e293b',
+    bgTertiary: '#334155',
+    text: '#f1f5f9',
+    textSecondary: '#cbd5e1',
+    border: '#334155',
+    cardBg: '#1e293b'
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -70,7 +81,7 @@ export default function Product() {
           </h1>
           <p style={{ 
             fontSize: '18px', 
-            color: '#6b7280',
+            color: theme.textSecondary,
             maxWidth: '600px',
             margin: '0 auto'
           }}>
@@ -89,10 +100,10 @@ export default function Product() {
           <div style={{ 
             textAlign: 'center', 
             padding: '60px 20px',
-            color: '#6b7280'
+            color: theme.textSecondary
           }}>
             <Package size={64} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-            <h3>No products available</h3>
+            <h3 style={{ color: theme.text }}>No products available</h3>
             <p>Check back later for new arrivals!</p>
           </div>
         )}
@@ -166,7 +177,7 @@ export default function Product() {
                   ))}
                   <span style={{ 
                     fontSize: '12px', 
-                    color: '#6b7280',
+                    color: theme.textSecondary,
                     marginLeft: '8px'
                   }}>
                     (4.0) • 127 reviews
@@ -218,11 +229,12 @@ export default function Product() {
             textAlign: 'center', 
             marginTop: '40px',
             padding: '20px',
-            background: 'white',
+            background: theme.bgSecondary,
             borderRadius: '12px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            border: `1px solid ${theme.border}`
           }}>
-            <h3 style={{ marginBottom: '8px' }}>Why Choose Our Products?</h3>
+            <h3 style={{ marginBottom: '8px', color: theme.text }}>Why Choose Our Products?</h3>
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -231,29 +243,29 @@ export default function Product() {
             }}>
               <div>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>🚚</div>
-                <strong>Free Shipping</strong>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0' }}>
+                <strong style={{ color: theme.text }}>Free Shipping</strong>
+                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
                   On orders over $50
                 </p>
               </div>
               <div>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔒</div>
-                <strong>Secure Payment</strong>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0' }}>
+                <strong style={{ color: theme.text }}>Secure Payment</strong>
+                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
                   100% secure transactions
                 </p>
               </div>
               <div>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>↩️</div>
-                <strong>Easy Returns</strong>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0' }}>
+                <strong style={{ color: theme.text }}>Easy Returns</strong>
+                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
                   30-day return policy
                 </p>
               </div>
               <div>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>⭐</div>
-                <strong>Quality Guaranteed</strong>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0' }}>
+                <strong style={{ color: theme.text }}>Quality Guaranteed</strong>
+                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
                   Premium products only
                 </p>
               </div>

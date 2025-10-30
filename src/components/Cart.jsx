@@ -24,7 +24,7 @@ import { AppContext } from "../App";
 import axios from "axios";
 
 export default function Cart() {
-  const { user, cart, setCart, isDarkMode, setIsDarkMode } = useContext(AppContext);
+  const { user, cart, setCart } = useContext(AppContext); // Removed isDarkMode
   const [orderValue, setOrderValue] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,12 +45,6 @@ export default function Cart() {
   
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
-
-  // Dark mode toggle
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    localStorage.setItem('darkMode', !isDarkMode);
-  };
 
   // Available promo codes
   const promoCodes = {
@@ -190,15 +184,19 @@ export default function Cart() {
   }, [cart]);
 
   // Theme colors
+  // Always dark mode theme
   const theme = {
-    bg: isDarkMode ? '#0f172a' : '#ffffff',
-    bgSecondary: isDarkMode ? '#1e293b' : '#f9fafb',
-    bgTertiary: isDarkMode ? '#334155' : '#f3f4f6',
-    text: isDarkMode ? '#f1f5f9' : '#111827',
-    textSecondary: isDarkMode ? '#cbd5e1' : '#6b7280',
-    border: isDarkMode ? '#334155' : '#e5e7eb',
-    cardBg: isDarkMode ? '#1e293b' : '#ffffff',
-    hover: isDarkMode ? '#334155' : '#f3f4f6'
+    bg: '#0f172a',
+    bgSecondary: '#1e293b',
+    bgTertiary: '#334155',
+    text: '#f1f5f9',
+    textSecondary: '#cbd5e1',
+    border: '#334155',
+    cardBg: '#1e293b',
+    hover: '#334155',
+    primary: '#3b82f6',
+    primaryDark: '#2563eb',
+    accent: '#8b5cf6'
   };
 
   // Calculations
@@ -211,29 +209,6 @@ export default function Cart() {
   return (
     <div className="page-wrapper" style={{ backgroundColor: theme.bg, color: theme.text, minHeight: '100vh' }}>
       <div className="container">
-        {/* Dark Mode Toggle */}
-        <button
-          onClick={toggleDarkMode}
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            backgroundColor: theme.cardBg,
-            border: `1px solid ${theme.border}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            zIndex: 1000,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          {isDarkMode ? <Sun size={20} color="#fbbf24" /> : <Moon size={20} color="#6366f1" />}
-        </button>
-
         {/* Header Section */}
         <div style={{ marginBottom: '24px' }}>
           <button 
@@ -286,12 +261,12 @@ export default function Cart() {
         {/* Alerts */}
         {error && (
           <div className="alert alert-danger fade-in" style={{ 
-            backgroundColor: isDarkMode ? '#7f1d1d' : '#f8d7da', 
-            color: isDarkMode ? '#fecaca' : '#721c24',
+            backgroundColor: '#7f1d1d',
+            color: '#fecaca',
             padding: '12px 20px', 
             borderRadius: '8px', 
             marginBottom: '16px',
-            border: `1px solid ${isDarkMode ? '#991b1b' : '#f5c6cb'}`
+            border: '1px solid #991b1b'
           }}>
             <strong>Error:</strong> {error}
           </div>
@@ -299,12 +274,12 @@ export default function Cart() {
 
         {success && (
           <div className="alert alert-success fade-in" style={{ 
-            backgroundColor: isDarkMode ? '#14532d' : '#d4edda', 
-            color: isDarkMode ? '#bbf7d0' : '#155724',
+            backgroundColor: '#14532d',
+            color: '#bbf7d0',
             padding: '12px 20px', 
             borderRadius: '8px', 
             marginBottom: '16px',
-            border: `1px solid ${isDarkMode ? '#166534' : '#c3e6cb'}`
+            border: '1px solid #166534'
           }}>
             {success}
           </div>
@@ -317,7 +292,7 @@ export default function Cart() {
             padding: '80px 20px',
             backgroundColor: theme.cardBg,
             border: `1px solid ${theme.border}`,
-            boxShadow: isDarkMode ? '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
           }}>
             <ShoppingBag size={80} style={{ margin: '0 auto 24px', opacity: 0.2 }} />
             <h2 style={{ marginBottom: '16px', color: theme.text }}>Your cart is empty</h2>
@@ -344,7 +319,7 @@ export default function Cart() {
                 padding: '24px',
                 backgroundColor: theme.cardBg,
                 border: `1px solid ${theme.border}`,
-                boxShadow: isDarkMode ? '0 2px 4px rgba(0, 0, 0, 0.2)' : '0 2px 4px rgba(0, 0, 0, 0.06)'
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
               }}>
                 <h3 style={{ marginBottom: '24px', fontSize: '20px', color: theme.text }}>Cart Items</h3>
                 
@@ -536,7 +511,7 @@ export default function Cart() {
                 padding: '24px',
                 backgroundColor: theme.cardBg,
                 border: `1px solid ${theme.border}`,
-                boxShadow: isDarkMode ? '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
               }}>
                 <h3 style={{ marginBottom: '24px', fontSize: '20px', color: theme.text }}>Order Summary</h3>
                 
@@ -651,8 +626,8 @@ export default function Cart() {
                 {orderValue < 50 && (
                   <div style={{ marginBottom: '20px' }}>
                     <div style={{ 
-                      background: isDarkMode ? '#422006' : '#fef3c7', 
-                      color: isDarkMode ? '#fbbf24' : '#92400e', 
+                      background: '#422006',
+                      color: '#fbbf24',
                       padding: '12px', 
                       borderRadius: '8px', 
                       fontSize: '14px', 

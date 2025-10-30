@@ -11,6 +11,14 @@ export default function Order() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Dark mode theme
+  const theme = {
+    text: '#f1f5f9',
+    textSecondary: '#cbd5e1',
+    bgSecondary: '#1e293b',
+    border: '#334155'
+  };
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -227,10 +235,11 @@ export default function Order() {
                             <td>${item.price?.toFixed(2)}</td>
                             <td>
                               <span style={{ 
-                                background: '#f3f4f6',
+                                background: theme.bgSecondary,
                                 padding: '4px 8px',
                                 borderRadius: '4px',
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                border: `1px solid ${theme.border}`
                               }}>
                                 {item.qty}
                               </span>
@@ -249,10 +258,10 @@ export default function Order() {
                   <div style={{ 
                     marginTop: '16px',
                     padding: '12px',
-                    background: '#fef3c7',
+                    background: '#422006',
                     borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#92400e'
+                    color: '#fbbf24'
                   }}>
                     <strong>Order Status:</strong> Your order is being processed and will be shipped soon.
                   </div>
@@ -280,7 +289,7 @@ export default function Order() {
             marginTop: '32px',
             textAlign: 'center',
             padding: '20px',
-            background: 'white',
+            background: theme.bgSecondary,
             borderRadius: '12px',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
           }}>

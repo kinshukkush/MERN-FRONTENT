@@ -12,6 +12,12 @@ export default function Register() {
   const Navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
 
+  // Dark mode theme
+  const theme = {
+    text: '#f1f5f9',
+    textSecondary: '#cbd5e1'
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -50,8 +56,8 @@ export default function Register() {
               }}>
                 <UserPlus size={32} color="white" />
               </div>
-              <h2>Create Account</h2>
-              <p style={{ color: '#6b7280' }}>
+              <h2 style={{ color: theme.text }}>Create Account</h2>
+              <p style={{ color: theme.textSecondary }}>
                 Join us today and start your shopping journey
               </p>
             </div>
@@ -133,7 +139,7 @@ export default function Register() {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#6b7280'
+                      color: theme.textSecondary
                     }}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -141,7 +147,7 @@ export default function Register() {
                 </div>
                 <div style={{ 
                   fontSize: '12px', 
-                  color: '#6b7280',
+                  color: theme.textSecondary,
                   marginTop: '4px'
                 }}>
                   Password should be at least 6 characters long
@@ -159,7 +165,7 @@ export default function Register() {
             </form>
 
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: '#6b7280' }}>
+              <p style={{ color: theme.textSecondary }}>
                 Already have an account?{' '}
                 <Link 
                   to="/login" 
@@ -177,12 +183,13 @@ export default function Register() {
             <div style={{ 
               marginTop: '24px',
               padding: '16px',
-              background: '#f9fafb',
+              background: '#1e293b',
               borderRadius: '8px',
               fontSize: '12px',
-              color: '#6b7280'
+              color: theme.textSecondary,
+              border: '1px solid #334155'
             }}>
-              <h4 style={{ marginBottom: '8px', color: '#374151' }}>Why join us?</h4>
+              <h4 style={{ marginBottom: '8px', color: theme.text }}>Why join us?</h4>
               <ul style={{ margin: 0, paddingLeft: '16px' }}>
                 <li>Exclusive member discounts</li>
                 <li>Early access to new products</li>

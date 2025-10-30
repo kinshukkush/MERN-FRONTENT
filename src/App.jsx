@@ -13,10 +13,22 @@ import Profile from "./components/Profile";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Products from "./components/Products";
-import { BrowserRouter, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Link, useLocation } from "react-router-dom";
 import "./App.css";
 
 export const AppContext = createContext();
+
+// Component to conditionally render Footer
+function ConditionalFooter() {
+  const location = useLocation();
+  const hideFooterPaths = ['/login', '/register'];
+  
+  if (hideFooterPaths.includes(location.pathname)) {
+    return null;
+  }
+  
+  return <Footer />;
+}
 
 function App() {
   // Initialize cart from localStorage
@@ -31,11 +43,8 @@ function App() {
     return savedUser ? JSON.parse(savedUser) : {};
   });
 
-  // Initialize dark mode from localStorage
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    return savedDarkMode ? JSON.parse(savedDarkMode) : false;
-  });
+  // Force dark mode - always enabled
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Save cart to localStorage when it changes
   useEffect(() => {
@@ -55,21 +64,13 @@ function App() {
     }
   }, [user]);
 
-  // Save dark mode preference to localStorage
+  // Apply dark mode class to body (always enabled)
   useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
-
-  // Apply dark mode class to body
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark-mode');
-    }
-  }, [isDarkMode]);
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark-mode');
+    // Clean up old dark mode preference
+    localStorage.removeItem('darkMode');
+  }, []);
 
   const contextValue = {
     cart,
@@ -81,7 +82,7 @@ function App() {
   };
 
   return (
-    <div className={`App-Container ${isDarkMode ? 'dark' : ''}`}>
+    <div className="App-Container dark">
       <AppContext.Provider value={contextValue}>
         <BrowserRouter>
           <Header />
@@ -100,7 +101,7 @@ function App() {
               </Route>
             </Routes>
           </main>
-          <Footer />
+          <ConditionalFooter />
         </BrowserRouter>
       </AppContext.Provider>
     </div>

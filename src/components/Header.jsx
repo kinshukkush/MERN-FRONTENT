@@ -8,8 +8,6 @@ import {
   Package, 
   LogIn, 
   Shield, 
-  Sun, 
-  Moon,
   Bell,
   Search,
   Menu,
@@ -22,7 +20,7 @@ import {
 import { AppContext } from "../App";
 
 export default function Header() {
-  const { user, cart, isDarkMode, setIsDarkMode } = useContext(AppContext);
+  const { user, cart } = useContext(AppContext); // Removed isDarkMode reference
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -49,21 +47,18 @@ export default function Header() {
     setIsMobileMenuOpen(false);
   }, [location]);
 
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    localStorage.setItem('darkMode', JSON.stringify(!isDarkMode));
-  };
-
-  // Theme colors
+  // Dark mode theme colors (always dark mode)
   const theme = {
-    bg: isDarkMode ? '#0f172a' : '#ffffff',
-    bgSecondary: isDarkMode ? '#1e293b' : '#f3f4f6',
-    text: isDarkMode ? '#f1f5f9' : '#111827',
-    textSecondary: isDarkMode ? '#cbd5e1' : '#6b7280',
-    border: isDarkMode ? '#334155' : '#e5e7eb',
+    bg: '#0f172a',
+    bgSecondary: '#1e293b',
+    bgTertiary: '#334155',
+    text: '#f1f5f9',
+    textSecondary: '#cbd5e1',
+    border: '#334155',
     primary: '#3b82f6',
-    primaryDark: '#2563eb'
+    primaryDark: '#2563eb',
+    accent: '#8b5cf6',
+    accentDark: '#7c3aed'
   };
 
   const navLinks = [
@@ -76,17 +71,14 @@ export default function Header() {
   return (
     <>
       <header style={{ 
-        background: isDarkMode 
-          ? `linear-gradient(135deg, ${theme.bg} 0%, ${theme.bgSecondary} 100%)`
-          : `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
-        boxShadow: isScrolled ? '0 4px 20px rgba(0, 0, 0, 0.1)' : 'none',
+        background: `linear-gradient(135deg, ${theme.bg} 0%, ${theme.bgSecondary} 100%)`,
+        boxShadow: isScrolled ? '0 4px 20px rgba(0, 0, 0, 0.3)' : 'none',
         position: 'sticky',
         top: 0,
         zIndex: 1000,
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease',
-        transform: isScrolled ? 'translateY(0)' : 'translateY(0)',
-        borderBottom: `1px solid ${isDarkMode ? theme.border : 'transparent'}`
+        borderBottom: `1px solid ${theme.border}`
       }}>
         <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           <nav style={{ 
@@ -94,7 +86,7 @@ export default function Header() {
             alignItems: 'center', 
             justifyContent: 'space-between',
             padding: isScrolled ? '12px 0' : '16px 0',
-            color: isDarkMode ? theme.text : 'white',
+            color: theme.text,
             transition: 'all 0.3s ease'
           }}>
             {/* Logo */}
@@ -109,24 +101,22 @@ export default function Header() {
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  background: isDarkMode ? theme.primary : 'rgba(255, 255, 255, 0.2)',
+                  background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.accent} 100%)`,
                   borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
                   transform: isScrolled ? 'scale(0.9)' : 'scale(1)',
                   transition: 'all 0.3s ease'
                 }}>
-                  <Package size={24} color={isDarkMode ? 'white' : undefined} />
+                  <Package size={24} color="white" />
                 </div>
                 <h1 style={{ 
                   fontSize: isScrolled ? '20px' : '24px', 
                   fontWeight: '700',
                   margin: 0,
-                  background: isDarkMode 
-                    ? 'linear-gradient(45deg, #3b82f6, #60a5fa)' 
-                    : 'linear-gradient(45deg, #fff, #e0e7ff)',
+                  background: 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   transition: 'all 0.3s ease'
@@ -141,11 +131,11 @@ export default function Header() {
               display: window.innerWidth > 768 ? 'flex' : 'none',
               alignItems: 'center', 
               gap: '8px',
-              background: isDarkMode ? theme.bgSecondary : 'rgba(255, 255, 255, 0.1)',
+              background: theme.bgSecondary,
               padding: '8px',
               borderRadius: '16px',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.2)'}`
+              border: `1px solid ${theme.border}`,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
             }}>
               {navLinks.map((link) => (
                 <Link 
@@ -155,14 +145,12 @@ export default function Header() {
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '8px',
-                    color: isDarkMode ? theme.text : 'white',
+                    color: theme.text,
                     textDecoration: 'none',
                     padding: '10px 16px',
                     borderRadius: '12px',
                     transition: 'all 0.3s ease',
-                    background: isActive(link.path) 
-                      ? (isDarkMode ? theme.primary : 'rgba(255, 255, 255, 0.2)') 
-                      : 'transparent',
+                    background: isActive(link.path) ? theme.primary : 'transparent',
                     fontWeight: '500',
                     position: 'relative',
                     transform: 'translateY(0)'
@@ -170,9 +158,7 @@ export default function Header() {
                   onMouseEnter={(e) => {
                     if (!isActive(link.path)) {
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.background = isDarkMode 
-                        ? 'rgba(59, 130, 246, 0.1)' 
-                        : 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -215,8 +201,8 @@ export default function Header() {
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 style={{
-                  background: isDarkMode ? theme.bgSecondary : 'rgba(255, 255, 255, 0.2)',
-                  border: `1px solid ${isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.3)'}`,
+                  background: theme.bgSecondary,
+                  border: `1px solid ${theme.border}`,
                   borderRadius: '12px',
                   width: '40px',
                   height: '40px',
@@ -225,46 +211,18 @@ export default function Header() {
                   justifyContent: 'center',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  color: isDarkMode ? theme.text : 'white'
+                  color: theme.text
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = theme.bgTertiary;
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = theme.bgSecondary;
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 <Search size={18} />
-              </button>
-
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className="theme-toggle"
-                style={{
-                  background: isDarkMode 
-                    ? `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`
-                    : 'rgba(255, 255, 255, 0.2)',
-                  border: `1px solid ${isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.3)'}`,
-                  borderRadius: '20px',
-                  width: '50px',
-                  height: '26px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  transition: 'all 0.3s ease',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{
-                  position: 'absolute',
-                  top: '3px',
-                  left: isDarkMode ? '26px' : '3px',
-                  width: '20px',
-                  height: '20px',
-                  background: 'white',
-                  borderRadius: '50%',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }}>
-                  {isDarkMode ? <Moon size={12} color="#3b82f6" /> : <Sun size={12} color="#f59e0b" />}
-                </div>
               </button>
 
               {/* User Section */}
@@ -272,8 +230,8 @@ export default function Header() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {/* Notifications */}
                   <button style={{
-                    background: isDarkMode ? theme.bgSecondary : 'rgba(255, 255, 255, 0.2)',
-                    border: `1px solid ${isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.3)'}`,
+                    background: theme.bgSecondary,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '12px',
                     width: '40px',
                     height: '40px',
@@ -282,8 +240,16 @@ export default function Header() {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    color: isDarkMode ? theme.text : 'white',
+                    color: theme.text,
                     position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = theme.bgTertiary;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = theme.bgSecondary;
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}>
                     <Bell size={18} />
                     {notifications > 0 && (
@@ -315,21 +281,26 @@ export default function Header() {
                         display: 'flex', 
                         alignItems: 'center', 
                         gap: '8px',
-                        color: isDarkMode ? theme.text : 'white',
+                        color: theme.text,
                         textDecoration: 'none',
                         padding: '10px 16px',
                         borderRadius: '12px',
                         transition: 'all 0.3s ease',
-                        background: isDarkMode ? theme.bgSecondary : 'rgba(255, 255, 255, 0.2)',
+                        background: theme.bgSecondary,
                         fontWeight: '500',
-                        backdropFilter: 'blur(10px)',
-                        border: `1px solid ${isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.3)'}`,
+                        border: `1px solid ${theme.border}`,
                         cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = theme.bgTertiary;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = theme.bgSecondary;
                       }}
                     >
                       <User size={18} />
                       <span style={{ display: window.innerWidth > 768 ? 'inline' : 'none' }}>
-                        {user.name || 'Profile'}
+                        {user.firstName || user.name || 'Profile'}
                       </span>
                       <ChevronDown size={16} style={{
                         transform: showProfileMenu ? 'rotate(180deg)' : 'rotate(0)',
@@ -344,13 +315,14 @@ export default function Header() {
                         top: '100%',
                         right: 0,
                         marginTop: '8px',
-                        background: isDarkMode ? theme.bgSecondary : 'white',
+                        background: theme.bgSecondary,
                         border: `1px solid ${theme.border}`,
                         borderRadius: '12px',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
                         minWidth: '200px',
                         animation: 'fadeIn 0.2s ease',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        zIndex: 1001
                       }}>
                         <Link
                           to="/profile"
@@ -363,10 +335,10 @@ export default function Header() {
                             textDecoration: 'none',
                             transition: 'all 0.2s ease'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bgSecondary}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          onMouseEnter={(e) => e.currentTarget.style.background = theme.bgTertiary}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
-                                                    <User size={16} />
+                          <User size={16} />
                           <span>My Profile</span>
                         </Link>
                         <Link
@@ -380,8 +352,8 @@ export default function Header() {
                             textDecoration: 'none',
                             transition: 'all 0.2s ease'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bgSecondary}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          onMouseEnter={(e) => e.currentTarget.style.background = theme.bgTertiary}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
                           <Heart size={16} />
                           <span>Wishlist</span>
@@ -397,8 +369,8 @@ export default function Header() {
                             textDecoration: 'none',
                             transition: 'all 0.2s ease'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bgSecondary}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          onMouseEnter={(e) => e.currentTarget.style.background = theme.bgTertiary}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
                           <Settings size={16} />
                           <span>Settings</span>
@@ -407,6 +379,7 @@ export default function Header() {
                         <button
                           onClick={() => {
                             localStorage.removeItem('user');
+                            localStorage.removeItem('token');
                             window.location.href = '/';
                           }}
                           style={{
@@ -422,8 +395,8 @@ export default function Header() {
                             cursor: 'pointer',
                             transition: 'all 0.2s ease'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#7f1d1d'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
                           <LogOut size={16} />
                           <span>Logout</span>
@@ -439,26 +412,24 @@ export default function Header() {
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '8px',
-                    color: isDarkMode ? theme.text : 'white',
+                    color: theme.text,
                     textDecoration: 'none',
                     padding: '12px 20px',
                     borderRadius: '12px',
                     transition: 'all 0.3s ease',
-                    background: isDarkMode 
-                      ? `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`
-                      : 'rgba(255, 255, 255, 0.2)',
-                    fontWeight: '500',
-                    backdropFilter: 'blur(10px)',
-                    border: `1px solid ${isDarkMode ? theme.primary : 'rgba(255, 255, 255, 0.3)'}`,
+                    background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.accent} 100%)`,
+                    fontWeight: '600',
+                    border: 'none',
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
                     transform: 'translateY(0)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
                   }}
                 >
                   <LogIn size={18} />
@@ -471,8 +442,8 @@ export default function Header() {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 style={{
                   display: window.innerWidth <= 768 ? 'flex' : 'none',
-                  background: isDarkMode ? theme.bgSecondary : 'rgba(255, 255, 255, 0.2)',
-                  border: `1px solid ${isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.3)'}`,
+                  background: theme.bgSecondary,
+                  border: `1px solid ${theme.border}`,
                   borderRadius: '12px',
                   width: '40px',
                   height: '40px',
@@ -480,7 +451,7 @@ export default function Header() {
                   justifyContent: 'center',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  color: isDarkMode ? theme.text : 'white'
+                  color: theme.text
                 }}
               >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -498,13 +469,12 @@ export default function Header() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                background: isDarkMode ? theme.bgSecondary : 'rgba(255, 255, 255, 0.2)',
+                background: theme.bgSecondary,
                 borderRadius: '12px',
                 padding: '12px 16px',
-                border: `1px solid ${isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.3)'}`,
-                backdropFilter: 'blur(10px)'
+                border: `1px solid ${theme.border}`,
               }}>
-                <Search size={20} color={isDarkMode ? theme.textSecondary : 'white'} />
+                <Search size={20} color={theme.textSecondary} />
                 <input
                   type="text"
                   placeholder="Search products..."
@@ -515,15 +485,11 @@ export default function Header() {
                     background: 'none',
                     border: 'none',
                     outline: 'none',
-                    color: isDarkMode ? theme.text : 'white',
-                    fontSize: '16px',
-                    '::placeholder': {
-                      color: isDarkMode ? theme.textSecondary : 'rgba(255, 255, 255, 0.7)'
-                    }
+                    color: theme.text,
+                    fontSize: '16px'
                   }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
-                      // Handle search
                       console.log('Searching for:', searchQuery);
                     }
                   }}
@@ -537,7 +503,7 @@ export default function Header() {
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: isDarkMode ? theme.text : 'white'
+                    color: theme.text
                   }}
                 >
                   <X size={20} />
@@ -554,10 +520,12 @@ export default function Header() {
             top: '100%',
             left: 0,
             right: 0,
-            background: isDarkMode ? theme.bg : 'white',
+            background: theme.bg,
             borderTop: `1px solid ${theme.border}`,
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            animation: 'slideDown 0.3s ease'
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+            animation: 'slideDown 0.3s ease',
+            maxHeight: 'calc(100vh - 80px)',
+            overflowY: 'auto'
           }}>
             <div style={{ padding: '16px' }}>
               {/* Mobile Search */}
@@ -600,7 +568,7 @@ export default function Header() {
                     textDecoration: 'none',
                     borderRadius: '12px',
                     marginBottom: '8px',
-                    background: isActive(link.path) ? theme.primary + '20' : 'transparent',
+                    background: isActive(link.path) ? theme.primary + '30' : 'transparent',
                     transition: 'all 0.2s ease',
                     position: 'relative'
                   }}
@@ -649,6 +617,7 @@ export default function Header() {
                   <button
                     onClick={() => {
                       localStorage.removeItem('user');
+                      localStorage.removeItem('token');
                       window.location.href = '/';
                     }}
                     style={{
@@ -682,8 +651,9 @@ export default function Header() {
                     color: 'white',
                     textDecoration: 'none',
                     borderRadius: '12px',
-                    background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
-                    fontWeight: '600'
+                    background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.accent} 100())`,
+                    fontWeight: '600',
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
                   }}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -705,7 +675,9 @@ export default function Header() {
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 998
+            zIndex: 998,
+            background: 'rgba(0, 0, 0, 0.3)',
+            backdropFilter: 'blur(2px)'
           }}
           onClick={() => {
             setShowProfileMenu(false);
@@ -753,10 +725,10 @@ export default function Header() {
         }
 
         input::placeholder {
-          color: ${isDarkMode ? theme.textSecondary : 'rgba(255, 255, 255, 0.7)'};
+          color: ${theme.textSecondary};
         }
 
-        /* Custom scrollbar for dropdown */
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
           width: 6px;
         }

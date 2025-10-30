@@ -1,152 +1,3 @@
-// import React from 'react';
-// import { Heart, Github, Mail, Phone, MapPin } from 'lucide-react';
-
-// export default function Footer() {
-//   return (
-//     <footer style={{
-//       background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
-//       color: 'white',
-//       marginTop: '60px'
-//     }}>
-//       <div className="container">
-//         <div style={{
-//           display: 'grid',
-//           gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-//           gap: '40px',
-//           padding: '40px 0'
-//         }}>
-//           <div>
-//             <h3 style={{ marginBottom: '16px', color: '#f3f4f6' }}>MERN Store</h3>
-//             <p style={{ color: '#9ca3af', lineHeight: '1.6', marginBottom: '16px' }}>
-//               Your one-stop destination for quality products. Built with modern web technologies 
-//               to provide the best shopping experience.
-//             </p>
-//             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
-//               <Heart size={16} fill="currentColor" />
-//               <span>Made with love using MERN Stack</span>
-//             </div>
-//           </div>
-          
-//           <div>
-//             <h4 style={{ marginBottom: '16px', color: '#f3f4f6' }}>Quick Links</h4>
-//             <ul style={{ listStyle: 'none', padding: 0 }}>
-//               {['Home', 'Products', 'About Us', 'Contact', 'FAQ', 'Support'].map(link => (
-//                 <li key={link} style={{ marginBottom: '8px' }}>
-//                   <a href="#" style={{ 
-//                     color: '#9ca3af', 
-//                     textDecoration: 'none',
-//                     transition: 'color 0.2s ease'
-//                   }}>
-//                     {link}
-//                   </a>
-//                 </li>
-//               ))}
-//             </ul>
-//           </div>
-          
-//           <div>
-//             <h4 style={{ marginBottom: '16px', color: '#f3f4f6' }}>Contact Info</h4>
-//             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-//               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
-//                 <Mail size={16} />
-//                 <span>kinshuksaxena3@gmail.com</span>
-//               </div>
-//               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
-//                 <Phone size={16} />
-//                 <span>+91 9057538521</span>
-//               </div>
-//               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
-//                 <MapPin size={16} />
-//                 <span>165, champa nager, gujar ki thadi, Jaipur, Rajasthan</span>
-//               </div>
-//             </div>
-//           </div>
-          
-//           <div>
-//             <h4 style={{ marginBottom: '16px', color: '#f3f4f6' }}>Follow Us</h4>
-//             <p style={{ color: '#9ca3af', marginBottom: '16px' }}>
-//               Stay connected for updates and offers
-//             </p>
-//             <div style={{ display: 'flex', gap: '12px' }}>
-//               <a href="#" style={{
-//                 display: 'flex',
-//                 alignItems: 'center',
-//                 justifyContent: 'center',
-//                 width: '40px',
-//                 height: '40px',
-//                 background: 'rgba(255, 255, 255, 0.1)',
-//                 borderRadius: '8px',
-//                 color: 'white',
-//                 textDecoration: 'none',
-//                 transition: 'all 0.2s ease'
-//               }}>
-//                 <Github size={20} />
-//               </a>
-//             </div>
-//           </div>
-//         </div>
-        
-//         <div style={{
-//           borderTop: '1px solid #374151',
-//           padding: '20px 0',
-//           textAlign: 'center',
-//           color: '#9ca3af'
-//         }}>
-//           <p>&copy; KINSHUK SAXENA | 2025 MERN Store. All rights reserved. Built with Heart</p>
-//         </div>
-//       </div>
-//     </footer>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState } from 'react';
 import { 
   Heart, Github, Mail, Phone, MapPin, 
@@ -206,11 +57,11 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { icon: Github, href: 'https://github.com', name: 'GitHub' },
-    { icon: Twitter, href: 'https://twitter.com', name: 'Twitter' },
-    { icon: Linkedin, href: 'https://linkedin.com', name: 'LinkedIn' },
-    { icon: Instagram, href: 'https://instagram.com', name: 'Instagram' },
-    { icon: Facebook, href: 'https://facebook.com', name: 'Facebook' }
+    { icon: Github, href: 'https://github.com/kinshukkush', name: 'GitHub' },
+    { icon: Twitter, href: 'https://x.com/KINSHUKSAXENA_', name: 'Twitter' },
+    { icon: Linkedin, href: 'https://www.linkedin.com/in/kinshuk-saxena-/', name: 'LinkedIn' },
+    { icon: Instagram, href: 'https://www.instagram.com/kinshuk._.saxena/', name: 'Instagram' },
+    { icon: Facebook, href: 'https://www.facebook.com/kinshuk.saxena.12/', name: 'Facebook' }
   ];
 
   const features = [
@@ -302,7 +153,7 @@ export default function Footer() {
             background: 'rgba(255, 255, 255, 0.05)',
             borderRadius: 'var(--radius-xl)',
             padding: '40px',
-            margin: '-60px 0 40px',
+            margin: '0 0 40px',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             textAlign: 'center'
