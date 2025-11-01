@@ -13,6 +13,7 @@ import Profile from "./components/Profile";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Products from "./components/Products";
+import About from "./components/about";
 import { BrowserRouter, Route, Routes, Link, useLocation } from "react-router-dom";
 import "./App.css";
 
@@ -89,6 +90,7 @@ function App() {
           <main className="main-content">
             <Routes>
               <Route index element={<Product />} />
+              <Route path="about" element={<About />} />
               <Route path="login" element={<Login />} />
               <Route path="profile" element={<Profile />} />
               <Route path="register" element={<Register />} />

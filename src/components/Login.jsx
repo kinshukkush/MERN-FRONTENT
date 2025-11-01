@@ -5,7 +5,6 @@ import axios from "axios";
 import { AppContext } from "../App";
 
 export default function Login() {
-  // Add comprehensive CSS for input styling
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -104,16 +103,22 @@ export default function Login() {
       const response = await axios.post(url, formData);
       
       if (response.data) {
-        // Store token if available
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
+        const userData = response.data;
+        
+        if (userData.token) {
+          localStorage.setItem('token', userData.token);
           if (rememberMe) {
             localStorage.setItem('userEmail', formData.email);
           }
         }
         
-        // Set user in context
-        setUser(response.data.user || response.data);
+        setUser(userData);
+        
+        console.log('Login successful, user data:', { 
+          email: userData.email, 
+          role: userData.role,
+          hasToken: !!userData.token 
+        });
         
         // Show success message
         setSuccessMessage('Login successful! Redirecting...');
@@ -673,7 +678,7 @@ export default function Login() {
               marginTop: '20px'
             }}>
               <p style={{ fontWeight: '600', marginBottom: '12px', color: '#cbd5e1' }}>
-                🎯 Demo Credentials:
+                🎯 Demo Credentials( ADMIN ACCESS ):
               </p>
               <div style={{
                 background: 'rgba(51, 65, 85, 0.5)',

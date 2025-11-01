@@ -193,7 +193,7 @@ export default function Register() {
               <ul style={{ margin: 0, paddingLeft: '16px' }}>
                 <li>Exclusive member discounts</li>
                 <li>Early access to new products</li>
-                <li>Free shipping on orders over $50</li>
+                <li>Free shipping on orders over ₹500</li>
                 <li>24/7 customer support</li>
               </ul>
             </div>

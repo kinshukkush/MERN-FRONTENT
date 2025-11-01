@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
-import { ShoppingCart, Star, Heart, Eye, Package } from "lucide-react";
+import { ShoppingCart, Star, Heart, Eye, Package, Check, Plus, X } from "lucide-react";
 import { AppContext } from "../App";
 
 export default function Product() {
@@ -8,6 +8,8 @@ export default function Product() {
   const [products, setProducts] = useState([]);
   const [error, setError] = useState();
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [wishlist, setWishlist] = useState([]);
   const { user, cart, setCart } = useContext(AppContext);
 
   // Dark mode theme
@@ -50,6 +52,27 @@ export default function Product() {
 
   const isInCart = (productId) => {
     return cart.some(item => item._id === productId);
+  };
+
+  const toggleWishlist = (product) => {
+    const isWishlisted = wishlist.some(item => item._id === product._id);
+    if (isWishlisted) {
+      setWishlist(wishlist.filter(item => item._id !== product._id));
+    } else {
+      setWishlist([...wishlist, product]);
+    }
+  };
+
+  const isInWishlist = (productId) => {
+    return wishlist.some(item => item._id === productId);
+  };
+
+  const openQuickView = (product) => {
+    setSelectedProduct(product);
+  };
+
+  const closeQuickView = () => {
+    setSelectedProduct(null);
   };
 
   if (loading) {
@@ -110,56 +133,156 @@ export default function Product() {
 
         <div className="grid grid-3">
           {products.map((product) => (
-            <div key={product._id} className="product-card fade-in">
-              <div style={{ position: 'relative', overflow: 'hidden' }}>
+            <div key={product._id} className="product-card fade-in" style={{
+              transform: 'translateY(0)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}>
+              <div style={{ 
+                position: 'relative', 
+                overflow: 'hidden', 
+                borderRadius: '12px 12px 0 0', 
+                height: '250px',
+                pointerEvents: 'none'
+              }}>
                 <img 
                   src={product.imgUrl || 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg'} 
                   alt={product.productName}
                   className="product-image"
-                  style={{ transition: 'transform 0.3s ease' }}
-                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.5s ease',
+                    pointerEvents: 'none'
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
                   onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
                 />
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  display: 'flex',
-                  gap: '8px'
-                }}>
-                  <button style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: 'rgba(255, 255, 255, 0.9)',
+                
+                {/* Action Buttons */}
+                <div 
+                  className="product-actions"
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    flexDirection: 'column',
+                    gap: '8px',
+                    transition: 'opacity 0.3s ease',
+                    zIndex: 100,
+                    pointerEvents: 'auto'
                   }}>
-                    <Heart size={16} />
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      toggleWishlist(product);
+                    }}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: isInWishlist(product._id) ? '#ef4444' : 'rgba(255, 255, 255, 0.95)',
+                      color: isInWishlist(product._id) ? 'white' : '#374151',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      zIndex: 101,
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title={isInWishlist(product._id) ? "Remove from wishlist" : "Add to wishlist"}
+                  >
+                    <Heart size={18} fill={isInWishlist(product._id) ? 'white' : 'none'} />
                   </button>
-                  <button style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <Eye size={16} />
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      openQuickView(product);
+                    }}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      color: '#374151',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      zIndex: 101,
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="Quick view"
+                  >
+                    <Eye size={18} />
                   </button>
                 </div>
+
+                {/* Stock Badge */}
+                {product.stock && product.stock > 0 && product.stock < 10 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    background: '#ef4444',
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Only {product.stock} left!
+                  </div>
+                )}
               </div>
               
-              <div className="product-content">
-                <h3 className="product-title">{product.productName}</h3>
+              <div className="product-content" style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                height: '100%',
+                minHeight: '280px'
+              }}>
+                <h3 className="product-title" style={{ 
+                  minHeight: '50px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  {product.productName}
+                </h3>
                 
                 <div style={{ 
                   display: 'flex', 
@@ -184,7 +307,14 @@ export default function Product() {
                   </span>
                 </div>
                 
-                <p className="product-description">
+                <p className="product-description" style={{
+                  minHeight: '60px',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  marginBottom: '16px'
+                }}>
                   {product.description || "Premium quality product with excellent features and durability."}
                 </p>
                 
@@ -192,9 +322,10 @@ export default function Product() {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'space-between',
-                  marginBottom: '16px'
+                  marginBottom: 'auto',
+                  paddingBottom: '16px'
                 }}>
-                  <div className="product-price">${product.price}</div>
+                  <div className="product-price">₹{product.price}</div>
                   <div style={{ 
                     fontSize: '12px', 
                     color: '#059669',
@@ -207,22 +338,197 @@ export default function Product() {
                 </div>
                 
                 <button 
-                  onClick={() => addToCart(product)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToCart(product);
+                  }}
                   disabled={isInCart(product._id)}
-                  className={`btn ${isInCart(product._id) ? 'btn-secondary' : 'btn-primary'}`}
+                  className={`btn ${isInCart(product._id) ? 'btn-success' : 'btn-primary'}`}
                   style={{ 
                     width: '100%',
-                    opacity: isInCart(product._id) ? 0.7 : 1,
-                    cursor: isInCart(product._id) ? 'not-allowed' : 'pointer'
+                    cursor: isInCart(product._id) ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.3s ease',
+                    marginTop: 'auto'
                   }}
                 >
-                  <ShoppingCart size={16} />
-                  {isInCart(product._id) ? 'Added to Cart' : 'Add to Cart'}
+                  {isInCart(product._id) ? (
+                    <>
+                      <Check size={16} />
+                      Added to Cart
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} />
+                      Add to Cart
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Quick View Modal */}
+        {selectedProduct && (
+          <div className="quick-view-modal" onClick={closeQuickView}>
+            <div className="quick-view-content" onClick={(e) => e.stopPropagation()}>
+              <button className="quick-view-close" onClick={closeQuickView}>
+                <X size={20} />
+              </button>
+              
+              <div className="quick-view-body">
+                <div>
+                  <img 
+                    src={selectedProduct.imgUrl || 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg'} 
+                    alt={selectedProduct.productName}
+                    className="quick-view-image"
+                  />
+                </div>
+                
+                <div className="quick-view-details">
+                  <h2>{selectedProduct.productName}</h2>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px',
+                    marginBottom: '16px'
+                  }}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        size={16} 
+                        fill={i < 4 ? "#fbbf24" : "none"} 
+                        color="#fbbf24" 
+                      />
+                    ))}
+                    <span style={{ 
+                      fontSize: '14px', 
+                      color: theme.textSecondary,
+                      marginLeft: '8px'
+                    }}>
+                      (4.0) • 127 reviews
+                    </span>
+                  </div>
+                  
+                  <div className="product-price">₹{selectedProduct.price}</div>
+                  
+                  <p className="product-description">
+                    {selectedProduct.description || "Premium quality product with excellent features and durability. This item is crafted with attention to detail and designed to meet your expectations."}
+                  </p>
+                  
+                  <div className="quick-view-stock">
+                    <Package size={16} />
+                    <span>
+                      {selectedProduct.stock >= 10 
+                        ? 'In Stock' 
+                        : `Only ${selectedProduct.stock} left!`}
+                    </span>
+                  </div>
+                  
+                  <div style={{
+                    background: theme.bgSecondary,
+                    padding: '16px',
+                    borderRadius: '12px',
+                    marginBottom: '24px'
+                  }}>
+                    <h4 style={{ 
+                      fontSize: '14px', 
+                      fontWeight: 600,
+                      marginBottom: '12px',
+                      color: theme.text 
+                    }}>
+                      Product Features
+                    </h4>
+                    <ul style={{
+                      listStyle: 'none',
+                      padding: 0,
+                      margin: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
+                        <Check size={16} color="#10b981" />
+                        Premium Quality Materials
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
+                        <Check size={16} color="#10b981" />
+                        Fast & Free Shipping
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
+                        <Check size={16} color="#10b981" />
+                        30-Day Money Back Guarantee
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
+                        <Check size={16} color="#10b981" />
+                        24/7 Customer Support
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div className="quick-view-actions">
+                    <button 
+                      onClick={() => {
+                        addToCart(selectedProduct);
+                        closeQuickView();
+                      }}
+                      disabled={isInCart(selectedProduct._id)}
+                      className={`btn ${isInCart(selectedProduct._id) ? 'btn-success' : 'btn-primary'}`}
+                      style={{ 
+                        flex: 1,
+                        cursor: isInCart(selectedProduct._id) ? 'default' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      {isInCart(selectedProduct._id) ? (
+                        <>
+                          <Check size={16} />
+                          Added to Cart
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart size={16} />
+                          Add to Cart
+                        </>
+                      )}
+                    </button>
+                    
+                    <button 
+                      onClick={() => toggleWishlist(selectedProduct)}
+                      style={{
+                        background: isInWishlist(selectedProduct._id) ? '#ef4444' : theme.bgSecondary,
+                        color: isInWishlist(selectedProduct._id) ? 'white' : theme.text,
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '12px 24px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontWeight: 600,
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Heart 
+                        size={16} 
+                        fill={isInWishlist(selectedProduct._id) ? 'white' : 'none'}
+                      />
+                      {isInWishlist(selectedProduct._id) ? 'Wishlisted' : 'Add to Wishlist'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {products.length > 0 && (
           <div style={{ 
@@ -245,7 +551,7 @@ export default function Product() {
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>🚚</div>
                 <strong style={{ color: theme.text }}>Free Shipping</strong>
                 <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
-                  On orders over $50
+                  On orders over ₹500
                 </p>
               </div>
               <div>

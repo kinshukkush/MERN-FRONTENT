@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useRef } from "react";
 import { 
   Package, 
@@ -16,8 +16,10 @@ import {
   Eye
 } from "lucide-react";
 import axios from "axios";
+import { AppContext } from "../App";
 
 export default function Products() {
+  const { user } = useContext(AppContext);
   const [products, setProducts] = useState([]);
   const [error, setError] = useState();
   const [loading, setLoading] = useState(false);
@@ -36,37 +38,85 @@ export default function Products() {
   const [showForm, setShowForm] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL;
 
+  // Debug: Check user on mount
+  useEffect(() => {
+    console.log('Products component - User:', { 
+      email: user?.email, 
+      role: user?.role, 
+      hasToken: !!user?.token,
+      apiUrl: API_URL
+    });
+  }, [user]);
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Check if user is logged in
+      if (!user?.token) {
+        setError("Please login to view products.");
+        setLoading(false);
+        return;
+      }
+      
       const url = `${API_URL}/api/products/?page=${page}&limit=${limit}&search=${searchVal}`;
-      const result = await axios.get(url);
+      const result = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
       setProducts(result.data.products || []);
       setTotalPages(result.data.total || 1);
     } catch (err) {
-      console.log(err);
-      setError("Failed to load products. Please try again.");
+      console.error('Fetch products error:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || "Failed to load products. Please try again.";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [page]);
+    if (user?.token) {
+      fetchProducts();
+    }
+  }, [page, user?.token]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     
     try {
+      console.log('Deleting product:', { 
+        id, 
+        userRole: user?.role,
+        hasToken: !!user?.token 
+      });
+      
+      if (!user?.token) {
+        setError("No authentication token. Please login again.");
+        return;
+      }
+      
+      if (user.role !== 'admin') {
+        setError("Admin access required to delete products.");
+        return;
+      }
+      
       const url = `${API_URL}/api/products/${id}`;
-      await axios.delete(url);
+      await axios.delete(url, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      
+      console.log('Product deleted successfully');
       setError(null);
       fetchProducts();
     } catch (err) {
-      console.log(err);
-      setError("Failed to delete product. Please try again.");
+      console.error('Delete product error:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || "Failed to delete product. Please try again.";
+      setError(errorMsg);
     }
   };
 
@@ -82,16 +132,31 @@ export default function Products() {
       return;
     }
     try {
+      if (!user?.token) {
+        setError("No authentication token. Please login again.");
+        return;
+      }
+      
+      if (user.role !== 'admin') {
+        setError("Admin access required to add products.");
+        return;
+      }
+      
       setLoading(true);
       const url = `${API_URL}/api/products`;
-      await axios.post(url, form);
+      await axios.post(url, form, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
       setError(null);
       fetchProducts();
       resetForm();
       setShowForm(false);
     } catch (err) {
-      console.log(err);
-      setError("Failed to add product. Please try again.");
+      console.error('Add product error:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || "Failed to add product. Please try again.";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -116,17 +181,32 @@ export default function Products() {
       return;
     }
     try {
+      if (!user?.token) {
+        setError("No authentication token. Please login again.");
+        return;
+      }
+      
+      if (user.role !== 'admin') {
+        setError("Admin access required to update products.");
+        return;
+      }
+      
       setLoading(true);
       const url = `${API_URL}/api/products/${editId}`;
-      await axios.patch(url, form);
+      await axios.patch(url, form, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
       fetchProducts();
       setEditId();
       resetForm();
       setShowForm(false);
       setError(null);
     } catch (err) {
-      console.log(err);
-      setError("Failed to update product. Please try again.");
+      console.error('Update product error:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || "Failed to update product. Please try again.";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -450,7 +530,7 @@ export default function Products() {
                           fontWeight: '600',
                           color: '#059669'
                         }}>
-                          ${product.price}
+                          ₹{product.price}
                         </div>
                       </td>
                       <td>

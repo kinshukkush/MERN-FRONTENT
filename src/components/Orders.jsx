@@ -15,7 +15,9 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Eye
+  Trash2,
+  Truck,
+  Navigation
 } from "lucide-react";
 
 export default function Orders() {
@@ -56,22 +58,88 @@ export default function Orders() {
   }, [status, page, user.token]);
 
   const updateOrder = async (newStatus, id) => {
-    if (!window.confirm(`Are you sure you want to mark this order as ${newStatus}?`)) return;
+    if (!window.confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
     
     try {
+      console.log('Updating order:', { 
+        id, 
+        newStatus, 
+        userRole: user.role,
+        hasToken: !!user.token,
+        apiUrl: API_URL 
+      });
+      
+      if (!user.token) {
+        setError("No authentication token. Please login again.");
+        return;
+      }
+      
+      if (user.role !== 'admin') {
+        setError("Admin access required to update orders.");
+        return;
+      }
+      
       const url = `${API_URL}/api/orders/${id}`;
-      await axios.patch(url, { status: newStatus });
+      const response = await axios.patch(url, { status: newStatus }, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      
+      console.log('Update successful:', response.data);
       fetchOrders();
     } catch (err) {
-      console.log(err);
-      setError("Failed to update order. Please try again.");
+      console.error('Update order error:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || "Failed to update order. Please try again.";
+      setError(errorMsg);
+    }
+  };
+
+  const deleteOrder = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) return;
+    
+    try {
+      console.log('Deleting order:', { 
+        id, 
+        userRole: user.role,
+        hasToken: !!user.token,
+        apiUrl: API_URL 
+      });
+      
+      if (!user.token) {
+        setError("No authentication token. Please login again.");
+        return;
+      }
+      
+      if (user.role !== 'admin') {
+        setError("Admin access required to delete orders.");
+        return;
+      }
+      
+      const url = `${API_URL}/api/orders/${id}`;
+      const response = await axios.delete(url, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      
+      console.log('Delete successful:', response.data);
+      fetchOrders();
+    } catch (err) {
+      console.error('Delete order error:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || "Failed to delete order. Please try again.";
+      setError(errorMsg);
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
-      case 'completed':
+      case 'delivered':
         return <CheckCircle size={16} color="#059669" />;
+      case 'shipped':
+        return <Truck size={16} color="#3b82f6" />;
+      case 'in transit':
+        return <Navigation size={16} color="#8b5cf6" />;
       case 'cancelled':
         return <XCircle size={16} color="#dc2626" />;
       case 'pending':
@@ -83,8 +151,12 @@ export default function Orders() {
   const getStatusBadge = (status) => {
     const statusLower = status?.toLowerCase();
     switch (statusLower) {
-      case 'completed':
+      case 'delivered':
         return 'badge-completed';
+      case 'shipped':
+        return 'badge-info';
+      case 'in transit':
+        return 'badge-info';
       case 'cancelled':
         return 'badge-cancelled';
       case 'pending':
@@ -105,7 +177,7 @@ export default function Orders() {
 
   const totalRevenue = orders.reduce((sum, order) => sum + (order.orderValue || 0), 0);
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
-  const completedOrders = orders.filter(order => order.status === 'completed').length;
+  const deliveredOrders = orders.filter(order => order.status === 'delivered').length;
 
   return (
     <div className="fade-in">
@@ -187,8 +259,8 @@ export default function Orders() {
           }}>
             <CheckCircle size={24} color="#22c55e" />
           </div>
-          <div className="stat-value">{completedOrders}</div>
-          <div className="stat-label">Completed</div>
+          <div className="stat-value">{deliveredOrders}</div>
+          <div className="stat-label">Delivered</div>
         </div>
 
         <div className="stat-card">
@@ -204,7 +276,7 @@ export default function Orders() {
           }}>
             <DollarSign size={24} color="#22c55e" />
           </div>
-          <div className="stat-value">${totalRevenue.toFixed(0)}</div>
+          <div className="stat-value">₹{totalRevenue.toFixed(0)}</div>
           <div className="stat-label">Revenue</div>
         </div>
       </div>
@@ -236,7 +308,9 @@ export default function Orders() {
           >
             <option value="">All Orders</option>
             <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
+            <option value="shipped">Shipped</option>
+            <option value="in transit">In Transit</option>
+            <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </select>
 
@@ -355,7 +429,7 @@ export default function Orders() {
                           fontWeight: '600',
                           color: '#059669'
                         }}>
-                          ${order.orderValue?.toFixed(2)}
+                          ₹{order.orderValue?.toFixed(2)}
                         </div>
                       </td>
                       <td>
@@ -366,31 +440,47 @@ export default function Orders() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <button 
-                            className="btn btn-secondary btn-sm"
-                            title="View order details"
-                          >
-                            <Eye size={14} />
-                          </button>
-                          
                           {order.status === "pending" && (
-                            <>
-                              <button 
-                                onClick={() => updateOrder("completed", order._id)}
-                                className="btn btn-success btn-sm"
-                                title="Mark as completed"
-                              >
-                                <CheckCircle size={14} />
-                              </button>
-                              <button 
-                                onClick={() => updateOrder("cancelled", order._id)}
-                                className="btn btn-danger btn-sm"
-                                title="Cancel order"
-                              >
-                                <XCircle size={14} />
-                              </button>
-                            </>
+                            <button 
+                              onClick={() => updateOrder("shipped", order._id)}
+                              className="btn btn-primary btn-sm"
+                              title="Mark as shipped"
+                            >
+                              <Truck size={14} />
+                            </button>
                           )}
+                          
+                          {order.status === "shipped" && (
+                            <button 
+                              onClick={() => updateOrder("in transit", order._id)}
+                              className="btn btn-info btn-sm"
+                              title="Mark as in transit"
+                              style={{
+                                background: '#8b5cf6',
+                                borderColor: '#8b5cf6'
+                              }}
+                            >
+                              <Navigation size={14} />
+                            </button>
+                          )}
+                          
+                          {order.status === "in transit" && (
+                            <button 
+                              onClick={() => updateOrder("delivered", order._id)}
+                              className="btn btn-success btn-sm"
+                              title="Mark as delivered"
+                            >
+                              <CheckCircle size={14} />
+                            </button>
+                          )}
+                          
+                          <button 
+                            onClick={() => deleteOrder(order._id)}
+                            className="btn btn-danger btn-sm"
+                            title="Delete order"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>

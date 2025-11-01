@@ -15,7 +15,8 @@ import {
   Heart,
   LogOut,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Info
 } from "lucide-react";
 import { AppContext } from "../App";
 
@@ -63,6 +64,7 @@ export default function Header() {
 
   const navLinks = [
     { path: '/', label: 'Home', icon: Home },
+    { path: '/about', label: 'About', icon: Info },
     { path: '/cart', label: 'Cart', icon: ShoppingCart, badge: cartItemCount },
     { path: '/order', label: 'Orders', icon: Package },
     ...(user?.role === "admin" ? [{ path: '/admin', label: 'Admin', icon: Shield }] : [])
@@ -342,7 +344,7 @@ export default function Header() {
                           <span>My Profile</span>
                         </Link>
                         <Link
-                          to="/wishlist"
+                          to="/cart"
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -359,7 +361,7 @@ export default function Header() {
                           <span>Wishlist</span>
                         </Link>
                         <Link
-                          to="/settings"
+                          to="/profile"
                           style={{
                             display: 'flex',
                             alignItems: 'center',

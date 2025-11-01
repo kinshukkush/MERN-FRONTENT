@@ -354,7 +354,7 @@ export default function Cart() {
                     <div style={{ flex: 1 }}>
                       <h4 style={{ marginBottom: '8px', fontSize: '18px', color: theme.text }}>{item.productName}</h4>
                       <p style={{ color: theme.textSecondary, fontSize: '14px', marginBottom: '12px' }}>
-                        ${item.price.toFixed(2)} each
+                        ₹{item.price.toFixed(2)} each
                       </p>
                       
                       <div className="quantity-controls" style={{ display: 'flex', alignItems: 'center' }}>
@@ -421,7 +421,7 @@ export default function Cart() {
                     
                     <div style={{ textAlign: 'right', minWidth: '120px' }}>
                       <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '12px', color: theme.text }}>
-                        ${(item.price * item.qty).toFixed(2)}
+                        ₹{(item.price * item.qty).toFixed(2)}
                       </div>
                       <button 
                         onClick={(e) => {
@@ -465,7 +465,7 @@ export default function Cart() {
                   <Truck size={24} color="#3b82f6" />
                   <div>
                     <h5 style={{ margin: 0, fontSize: '14px', color: theme.text }}>Free Shipping</h5>
-                    <p style={{ margin: 0, fontSize: '12px', color: theme.textSecondary }}>On orders over $50</p>
+                    <p style={{ margin: 0, fontSize: '12px', color: theme.textSecondary }}>On orders over ₹500</p>
                   </div>
                 </div>
 
@@ -575,7 +575,7 @@ export default function Cart() {
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <span style={{ color: theme.text }}>Subtotal ({cartItemCount} items)</span>
-                    <span style={{ fontWeight: '500', color: theme.text }}>${orderValue.toFixed(2)}</span>
+                    <span style={{ fontWeight: '500', color: theme.text }}>₹{orderValue.toFixed(2)}</span>
                   </div>
                   
                   {appliedPromo && (
@@ -589,7 +589,7 @@ export default function Cart() {
                         <Tag size={14} />
                         Discount ({appliedPromo})
                       </span>
-                      <span style={{ fontWeight: '500' }}>-${discountAmount.toFixed(2)}</span>
+                      <span style={{ fontWeight: '500' }}>-₹{discountAmount.toFixed(2)}</span>
                     </div>
                   )}
                   
@@ -599,13 +599,13 @@ export default function Cart() {
                       fontWeight: '500',
                       color: shipping === 0 ? '#10b981' : theme.text
                     }}>
-                      {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+                      {shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}
                     </span>
                   </div>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <span style={{ color: theme.text }}>Tax (8%)</span>
-                    <span style={{ fontWeight: '500', color: theme.text }}>${tax.toFixed(2)}</span>
+                    <span style={{ fontWeight: '500', color: theme.text }}>₹{tax.toFixed(2)}</span>
                   </div>
                   
                   <hr style={{ margin: '16px 0', borderColor: theme.border }} />
@@ -618,7 +618,7 @@ export default function Cart() {
                     color: theme.text
                   }}>
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>₹{total.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -634,7 +634,7 @@ export default function Cart() {
                       marginBottom: '8px',
                       textAlign: 'center'
                     }}>
-                      Add ${(50 - orderValue).toFixed(2)} more for free shipping!
+                      Add ₹{(50 - orderValue).toFixed(2)} more for free shipping!
                     </div>
                     <div style={{ 
                       height: '8px', 
@@ -670,7 +670,7 @@ export default function Cart() {
                   }}
                 >
                   <CreditCard size={20} />
-                  {loading ? 'Processing...' : `Checkout • $${total.toFixed(2)}`}
+                  {loading ? 'Processing...' : `Checkout • ₹${total.toFixed(2)}`}
                 </button>
 
                 {/* Security & Policy Info */}
@@ -917,26 +917,26 @@ export default function Cart() {
                 <h4 style={{ margin: '0 0 12px 0', color: theme.text }}>Order Summary</h4>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: theme.textSecondary }}>Subtotal</span>
-                  <span style={{ color: theme.text }}>${orderValue.toFixed(2)}</span>
+                  <span style={{ color: theme.text }}>₹{orderValue.toFixed(2)}</span>
                 </div>
                 {appliedPromo && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#10b981' }}>
                     <span>Discount</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    <span>-₹{discountAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: theme.textSecondary }}>Shipping</span>
-                  <span style={{ color: theme.text }}>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+                  <span style={{ color: theme.text }}>{shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <span style={{ color: theme.textSecondary }}>Tax</span>
-                  <span style={{ color: theme.text }}>${tax.toFixed(2)}</span>
+                  <span style={{ color: theme.text }}>₹{tax.toFixed(2)}</span>
                 </div>
                 <hr style={{ borderColor: theme.border, margin: '12px 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: '700' }}>
                   <span style={{ color: theme.text }}>Total</span>
-                  <span style={{ color: theme.text }}>${total.toFixed(2)}</span>
+                  <span style={{ color: theme.text }}>₹{total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -973,7 +973,7 @@ export default function Cart() {
                   ) : (
                     <>
                       <Shield size={16} />
-                      Pay ${total.toFixed(2)}
+                      Pay ₹{total.toFixed(2)}
                     </>
                   )}
                 </button>
