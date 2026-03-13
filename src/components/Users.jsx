@@ -1,530 +1,134 @@
-import React from "react";
-import { useEffect, useState } from "react";
-import { useRef } from "react";
-import { useContext } from "react";
-import { AppContext } from "../App";
-import { 
-  Users as UsersIcon, 
-  UserPlus, 
-  Edit, 
-  Trash2, 
-  Search,
-  Filter,
-  Download,
-  Mail,
-  Shield,
-  User,
-  ChevronLeft,
-  ChevronRight
-} from "lucide-react";
-import axios from "axios";
+import { useState, useEffect, useCallback } from "react";
+import { useToast } from "../context/ToastContext";
+import api from "../utils/api";
+
+function DeleteConfirm({ open, onClose, onConfirm, name }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content p-6 max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
+        <div className="text-5xl mb-4">⚠️</div>
+        <h3 className="font-heading text-xl text-gradient-steel mb-2">DELETE USER?</h3>
+        <p className="text-steel text-sm font-body mb-6">"{name}" will be permanently removed.</p>
+        <div className="flex gap-3">
+          <button onClick={onConfirm} className="btn-danger flex-1 py-3 text-sm font-medium">Delete</button>
+          <button onClick={onClose} className="btn-ghost flex-1 py-3 text-sm">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Users() {
+  const toast = useToast();
   const [users, setUsers] = useState([]);
-  const { user } = useContext(AppContext);
-  const [error, setError] = useState();
-  const [loading, setLoading] = useState(false);
-  const frmRef = useRef();
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    role: "",
-  });
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [searchVal, setSearchVal] = useState("");
   const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [editId, setEditId] = useState();
-  const [showForm, setShowForm] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL;
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      const url = `${API_URL}/api/users/?page=${page}&limit=${limit}&search=${searchVal}`;
-      const result = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      setUsers(result.data.users || []);
-      setTotalPages(result.data.total || 1);
-    } catch (err) {
-      console.log(err);
-      setError("Failed to load users. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const { data } = await api.get(`/api/users?page=${page}&limit=10&search=${search}`);
+      setUsers(data.users || []);
+      setTotalPages(data.total || 1);
+    } catch { toast.error("Failed to load users."); }
+    finally { setLoading(false); }
+  }, [page, search]);
 
-  useEffect(() => {
-    if (user.token) {
-      fetchUsers();
-    }
-  }, [page, user.token]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    
+  const toggleRole = async (user) => {
+    const newRole = user.role === "admin" ? "user" : "admin";
     try {
-      const url = `${API_URL}/api/users/${id}`;
-      await axios.delete(url, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      setError(null);
+      await api.patch(`/api/users/${user._id}`, { role: newRole });
+      toast.success(`${user.name}'s role updated to ${newRole}`);
       fetchUsers();
-    } catch (err) {
-      console.log(err);
-      setError("Failed to delete user. Please try again.");
-    }
+    } catch { toast.error("Failed to update role."); }
   };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    const frm = frmRef.current;
-    if (!frm.checkValidity()) {
-      frm.reportValidity();
-      return;
-    }
+  const handleDelete = async () => {
     try {
-      setLoading(true);
-      const url = `${API_URL}/api/users`;
-      await axios.post(url, form, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      setError(null);
-      fetchUsers();
-      resetForm();
-      setShowForm(false);
-    } catch (err) {
-      console.log(err);
-      setError("Failed to add user. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      await api.delete(`/api/users/${deleteTarget._id}`);
+      toast.success("User deleted.");
+      setDeleteTarget(null); fetchUsers();
+    } catch { toast.error("Delete failed."); }
   };
 
-  const handleEdit = (user) => {
-    setEditId(user._id);
-    setForm({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      password: "",
-      role: user.role,
-    });
-    setShowForm(true);
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    const frm = frmRef.current;
-    if (!frm.checkValidity()) {
-      frm.reportValidity();
-      return;
-    }
-    try {
-      setLoading(true);
-      const url = `${API_URL}/api/users/${editId}`;
-      await axios.patch(url, form, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      fetchUsers();
-      setEditId();
-      resetForm();
-      setShowForm(false);
-      setError(null);
-    } catch (err) {
-      console.log(err);
-      setError("Failed to update user. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditId();
-    resetForm();
-    setShowForm(false);
-  };
-
-  const resetForm = () => {
-    setForm({
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      role: "",
-    });
-  };
-
-  const handleSearch = () => {
-    setPage(1);
-    fetchUsers();
-  };
+  const fmtDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
 
   return (
-    <div className="fade-in">
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '32px'
-      }}>
-        <div>
-          <h2 style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px',
-            marginBottom: '8px'
-          }}>
-            <UsersIcon size={28} />
-            User Management
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-            Manage user accounts and permissions
-          </p>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn btn-secondary">
-            <Download size={16} />
-            Export
-          </button>
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            className="btn btn-primary"
-          >
-            <UserPlus size={16} />
-            Add User
-          </button>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-heading text-4xl text-gradient-steel mb-1">USERS</h1>
+        <p className="text-steel text-xs font-body">Manage registered accounts</p>
       </div>
 
-      {error && (
-        <div className="error">
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      {/* Add/Edit Form */}
-      {showForm && (
-        <div className="card" style={{ marginBottom: '24px' }}>
-          <h3 style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            marginBottom: '20px'
-          }}>
-            <UserPlus size={20} />
-            {editId ? 'Edit User' : 'Add New User'}
-          </h3>
-          
-          <form ref={frmRef} onSubmit={editId ? handleUpdate : handleAdd}>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '20px',
-              marginBottom: '24px'
-            }}>
-              <div className="form-group">
-                <label className="form-label">
-                  <User size={16} />
-                  First Name
-                </label>
-                <input
-                  name="firstName"
-                  value={form.firstName}
-                  type="text"
-                  className="form-input"
-                  placeholder="Enter first name"
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <User size={16} />
-                  Last Name
-                </label>
-                <input
-                  name="lastName"
-                  value={form.lastName}
-                  type="text"
-                  className="form-input"
-                  placeholder="Enter last name"
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <Mail size={16} />
-                  Email Address
-                </label>
-                <input
-                  name="email"
-                  value={form.email}
-                  type="email"
-                  className="form-input"
-                  placeholder="Enter email address"
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <Shield size={16} />
-                  Password
-                </label>
-                <input
-                  name="password"
-                  value={form.password}
-                  type="password"
-                  className="form-input"
-                  placeholder={editId ? "Leave blank to keep current" : "Enter password"}
-                  onChange={handleChange}
-                  required={!editId}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <Shield size={16} />
-                  Role
-                </label>
-                <select
-                  name="role"
-                  value={form.role}
-                  className="form-select"
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Role</option>
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              {editId ? (
-                <>
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? 'Updating...' : 'Update User'}
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={handleCancel}
-                    className="btn btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={loading}
-                >
-                  {loading ? 'Adding...' : 'Add User'}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Search and Filters */}
-      <div className="card" style={{ marginBottom: '24px' }}>
-        <div className="search-container">
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search 
-              size={18} 
-              style={{ 
-                position: 'absolute', 
-                left: '12px', 
-                top: '50%', 
-                transform: 'translateY(-50%)',
-                color: 'var(--text-muted)'
-              }} 
-            />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search users by name or email..."
-              value={searchVal}
-              onChange={(e) => setSearchVal(e.target.value)}
-              style={{ paddingLeft: '44px' }}
-            />
-          </div>
-          <button onClick={handleSearch} className="btn btn-primary">
-            <Search size={16} />
-            Search
-          </button>
-          <select 
-            className="form-select"
-            style={{ width: 'auto', minWidth: '120px' }}
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-          >
-            <option value={5}>5 per page</option>
-            <option value={10}>10 per page</option>
-            <option value={25}>25 per page</option>
-            <option value={50}>50 per page</option>
-          </select>
-        </div>
+      <div className="relative max-w-sm">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-steel" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Search by name or email…" className="metal-input pl-9 pr-4 py-2.5 text-sm w-full" />
       </div>
 
-      {/* Users Table */}
-      <div className="card">
+      <div className="metal-card overflow-hidden">
         {loading ? (
-          <div className="loading">
-            <div className="spinner"></div>
-            <span>Loading users...</span>
-          </div>
-        ) : users.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '60px 20px',
-            color: 'var(--text-secondary)'
-          }}>
-            <UsersIcon size={64} style={{ opacity: 0.3, marginBottom: '16px' }} />
-            <h3>No users found</h3>
-            <p>Try adjusting your search criteria or add a new user.</p>
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-2 border-steel border-t-copper rounded-full animate-spin" />
           </div>
         ) : (
-          <>
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+          <div className="overflow-x-auto">
+            <table className="metal-table">
+              <thead><tr>
+                <th>User</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th>
+              </tr></thead>
+              <tbody>
+                {users.length === 0 && (
+                  <tr><td colSpan={5} className="text-center py-12 text-steel">No users found</td></tr>
+                )}
+                {users.map((u) => (
+                  <tr key={u._id}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 text-obsidian"
+                          style={{ background: "linear-gradient(135deg, #B87333, #D4AF37)" }}>
+                          {(u.name || u.email || "?")[0].toUpperCase()}
+                        </div>
+                        <span className="font-medium text-sm max-w-[120px] truncate">{u.name}</span>
+                      </div>
+                    </td>
+                    <td className="text-xs text-steel truncate max-w-[160px]">{u.email}</td>
+                    <td>
+                      <button onClick={() => toggleRole(u)}
+                        className={`badge cursor-pointer hover:opacity-80 transition-opacity ${u.role === "admin" ? "badge-admin" : "badge-user"}`}>
+                        {u.role}
+                      </button>
+                    </td>
+                    <td className="text-xs text-steel">{fmtDate(u.createdAt)}</td>
+                    <td>
+                      <button onClick={() => setDeleteTarget(u)} className="btn-danger px-3 py-1.5 text-xs">Delete</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.map((userItem) => (
-                    <tr key={userItem._id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: 'var(--gradient-primary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: '600'
-                          }}>
-                            {userItem.firstName?.charAt(0)}{userItem.lastName?.charAt(0)}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: '600' }}>
-                              {userItem.firstName} {userItem.lastName}
-                            </div>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: 'var(--text-secondary)' 
-                            }}>
-                              ID: {userItem._id?.slice(-8)}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Mail size={14} color="var(--text-muted)" />
-                          {userItem.email}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge ${userItem.role === 'admin' ? 'badge-completed' : 'badge-pending'}`}>
-                          <Shield size={12} />
-                          {userItem.role}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge badge-completed">
-                          Active
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            onClick={() => handleEdit(userItem)}
-                            className="btn btn-secondary btn-sm"
-                            title="Edit user"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(userItem._id)}
-                            className="btn btn-danger btn-sm"
-                            title="Delete user"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="pagination">
-              <button 
-                disabled={page === 1} 
-                onClick={() => setPage(page - 1)}
-                className="btn btn-secondary"
-              >
-                <ChevronLeft size={16} />
-                Previous
-              </button>
-              
-              <div className="pagination-info">
-                Page {page} of {totalPages} • {users.length} users
-              </div>
-              
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                className="btn btn-secondary"
-              >
-                Next
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-ghost px-4 py-2 text-sm" style={{ opacity: page === 1 ? 0.4 : 1 }}>← Prev</button>
+          <span className="text-steel font-body text-sm">Page {page} / {totalPages}</span>
+          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-ghost px-4 py-2 text-sm" style={{ opacity: page === totalPages ? 0.4 : 1 }}>Next →</button>
+        </div>
+      )}
+
+      <DeleteConfirm open={!!deleteTarget} onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete} name={deleteTarget?.name} />
     </div>
   );
 }

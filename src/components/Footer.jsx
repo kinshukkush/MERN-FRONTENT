@@ -1,676 +1,123 @@
-import React, { useState } from 'react';
-import { 
-  Heart, Github, Mail, Phone, MapPin, 
-  Twitter, Linkedin, Instagram, Facebook,
-  ArrowRight, Shield, Truck, CreditCard,
-  Clock, ChevronUp, ExternalLink, Star,
-  Award, Users, Package, HeadphonesIcon,
-  Youtube, Send, MessageCircle
-} from 'lucide-react';
+import { Link } from "react-router-dom";
+
+const socialLinks = [
+  { name: "GitHub", href: "https://github.com/kinshukkush", icon: (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+  )},
+  { name: "Twitter", href: "https://x.com/kinshuksaxena_", icon: (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417a9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+  )},
+  { name: "Instagram", href: "https://www.instagram.com/kinshuk._.saxena/", icon: (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12c0 3.259.014 3.668.072 4.948.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24c3.259 0 3.668-.014 4.948-.072 1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.689.072-4.948 0-3.259-.014-3.667-.072-4.947-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03z"/></svg>
+  )},
+  { name: "LinkedIn", href: "https://www.linkedin.com/in/kinshuk-saxena-/", icon: (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.004 1.418-.103.25-.129.599-.129.948v5.439h-3.554s.05-8.82 0-9.737h3.554v1.378c-.009.015-.021.029-.033.042h.033v-.042c.43-.664 1.199-1.61 2.92-1.61 2.135 0 3.733 1.39 3.733 4.377v5.592zM5.337 9.432c-1.144 0-1.915-.759-1.915-1.71 0-.956.77-1.71 1.97-1.71 1.197 0 1.911.754 1.935 1.71 0 .951-.738 1.71-1.99 1.71zm1.581 11.02H3.715V9.715h3.203v10.737zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/></svg>
+  )},
+  { name: "Portfolio", href: "https://kinshuk.unaux.com/", icon: (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20 13H4c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm0-11H4c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+  )},
+];
 
 export default function Footer() {
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  React.useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const currentYear = new Date().getFullYear();
-
-  const socialLinks = [
-    { icon: Github, href: 'https://github.com/kinshukkush', name: 'GitHub', color: '#333' },
-    { icon: Twitter, href: 'https://x.com/KINSHUKSAXENA_', name: 'Twitter', color: '#1DA1F2' },
-    { icon: Linkedin, href: 'https://www.linkedin.com/in/kinshuk-saxena-/', name: 'LinkedIn', color: '#0A66C2' },
-    { icon: Instagram, href: 'https://www.instagram.com/kinshuk._.saxena/', name: 'Instagram', color: '#E4405F' },
-    { icon: Facebook, href: 'https://www.facebook.com/kinshuk.saxena.12/', name: 'Facebook', color: '#1877F2' },
-    { icon: Youtube, href: 'https://www.youtube.com/@kinshuksaxena4645', name: 'YouTube', color: '#FF0000' },
-    { icon: Send, href: 'https://t.me/Kinshuk_saxen', name: 'Telegram', color: '#0088cc' },
-    { icon: MessageCircle, href: 'https://wa.me/919057538521', name: 'WhatsApp', color: '#25D366' }
-  ];
-
-  const features = [
-    { icon: Truck, text: 'Free Shipping', subtext: 'On orders over ₹500' },
-    { icon: Shield, text: 'Secure Payment', subtext: '100% Protected' },
-    { icon: HeadphonesIcon, text: '24/7 Support', subtext: 'Always here to help' },
-    { icon: Package, text: 'Easy Returns', subtext: '30-day return policy' }
-  ];
-
-  const stats = [
-    { icon: Users, value: '50K+', label: 'Happy Customers' },
-    { icon: Package, value: '100K+', label: 'Products Delivered' },
-    { icon: Award, value: '4.8/5', label: 'Customer Rating' },
-    { icon: Star, value: '10+', label: 'Years Experience' }
-  ];
-
-  const quickLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Shop', href: '/' },
-    { name: 'Cart', href: '/cart' },
-    { name: 'Orders', href: '/order' },
-    { name: 'Wishlist', href: '/cart' },
-    { name: 'Track Order', href: '/order' }
-  ];
-
-  const policies = [
-    { name: 'Privacy Policy', href: '/about' },
-    { name: 'Terms of Service', href: '/about' },
-    { name: 'Refund Policy', href: '/about' },
-    { name: 'Shipping Policy', href: '/about' }
-  ];
-
   return (
-    <>
-      <section className="features-section" style={{
-        background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
-        padding: '50px 0',
-        marginTop: '60px'
-      }}>
-        <div className="container">
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '24px',
-            maxWidth: '1200px',
-            margin: '0 auto'
-          }}>
-            {features.map((feature, index) => (
-              <div key={index} className="feature-card card" style={{
-                textAlign: 'center',
-                padding: '28px 20px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '14px',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                cursor: 'pointer',
-                animation: `fadeInUp 0.6s ease-out ${index * 0.1}s backwards`,
-                backdropFilter: 'blur(10px)'
-              }}>
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  margin: '0 auto 16px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)'
-                }}>
-                  <feature.icon size={30} />
-                </div>
-                <h4 style={{ 
-                  marginBottom: '6px', 
-                  color: '#f1f5f9',
-                  fontSize: '17px',
-                  fontWeight: '600'
-                }}>
-                  {feature.text}
-                </h4>
-                <p style={{ 
-                  color: '#cbd5e1', 
-                  fontSize: '13px',
-                  margin: 0
-                }}>
-                  {feature.subtext}
-                </p>
+    <footer style={{ background: "linear-gradient(180deg, #0D0D16 0%, #0A0A0F 100%)", borderTop: "1px solid rgba(184,115,51,0.15)" }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+          {/* Brand */}
+          <div className="lg:col-span-1">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, #B87333, #D4AF37)" }}>
+                <span className="font-heading text-xl text-obsidian">M</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '50px 0',
-        color: 'white'
-      }}>
-        <div className="container">
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '32px',
-            maxWidth: '1200px',
-            margin: '0 auto',
-            textAlign: 'center'
-          }}>
-            {stats.map((stat, index) => (
-              <div key={index} style={{
-                animation: `fadeInUp 0.6s ease-out ${index * 0.1}s backwards`
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '10px'
-                }}>
-                  <stat.icon size={28} style={{ marginRight: '10px', opacity: 0.9 }} />
-                </div>
-                <div style={{ 
-                  fontSize: '32px', 
-                  fontWeight: 'bold',
-                  marginBottom: '6px',
-                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}>
-                  {stat.value}
-                </div>
-                <div style={{ 
-                  fontSize: '13px', 
-                  opacity: 0.9,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Main Footer */}
-      <footer style={{
-        background: 'linear-gradient(180deg, #1a1f2e 0%, #0f1419 100%)',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Background Pattern */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.03,
-          background: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          pointerEvents: 'none'
-        }} />
-
-        <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto' }}>
-          {/* Main Footer Content */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '40px',
-            padding: '50px 20px 30px',
-            justifyItems: 'start'
-          }}>
-            {/* Company Info - Column 1 */}
-            <div className="animate-fadeInUp" style={{ maxWidth: '340px', width: '100%' }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px',
-                marginBottom: '20px'
-              }}>
-                <div style={{
-                  width: '52px',
-                  height: '52px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '26px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)'
-                }}>
-                  M
-                </div>
-                <h3 style={{ fontSize: '24px', margin: 0, fontWeight: '700' }}>MERN Store</h3>
-              </div>
-              
-              <p style={{ 
-                color: '#cbd5e1', 
-                lineHeight: '1.7', 
-                marginBottom: '20px',
-                fontSize: '14px'
-              }}>
-                Your trusted destination for quality products. Experience exceptional shopping with cutting-edge technology and customer-first approach.
-              </p>
-              
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                color: '#f472b6',
-                fontSize: '13px',
-                marginBottom: '24px',
-                padding: '10px 14px',
-                background: 'rgba(244, 114, 182, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(244, 114, 182, 0.2)'
-              }}>
-                <Heart size={16} fill="currentColor" />
-                <span>Made with love using MERN Stack</span>
-              </div>
-
-              {/* Quick Links */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ marginBottom: '14px', fontSize: '15px', fontWeight: '600', color: '#f1f5f9' }}>
-                  Quick Links
-                </h4>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(2, 1fr)', 
-                  gap: '8px' 
-                }}>
-                  {quickLinks.map((link) => (
-                    <a 
-                      key={link.name}
-                      href={link.href}
-                      className="footer-link" 
-                      style={{ 
-                        color: '#cbd5e1', 
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '13px'
-                      }}
-                    >
-                      <ArrowRight size={12} style={{ opacity: 0, transition: 'all 0.2s ease' }} />
-                      {link.name}
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              {/* Policies */}
-              <div>
-                <h4 style={{ marginBottom: '14px', fontSize: '15px', fontWeight: '600', color: '#f1f5f9' }}>
-                  Policies
-                </h4>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '8px' 
-                }}>
-                  {policies.map((policy) => (
-                    <a 
-                      key={policy.name}
-                      href={policy.href}
-                      className="footer-link" 
-                      style={{ 
-                        color: '#cbd5e1', 
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '13px'
-                      }}
-                    >
-                      <ArrowRight size={12} style={{ opacity: 0, transition: 'all 0.2s ease' }} />
-                      {policy.name}
-                    </a>
-                  ))}
-                </div>
-              </div>
+              <span className="font-heading text-xl text-gradient-steel">MERN STORE</span>
             </div>
-
-            {/* Contact Info - Column 2 */}
-            <div className="animate-fadeInUp delay-100" style={{ maxWidth: '340px', width: '100%' }}>
-              <h4 style={{ marginBottom: '20px', fontSize: '17px', fontWeight: '600', color: '#f1f5f9' }}>
-                Get in Touch
-              </h4>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
-                <a 
-                  href="mailto:kinshuksaxena3@gmail.com"
-                  className="contact-item"
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start', 
-                    gap: '12px', 
-                    color: '#cbd5e1',
-                    textDecoration: 'none',
-                    transition: 'all 0.2s ease',
-                    padding: '10px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}
-                >
-                  <Mail size={18} style={{ marginTop: '2px', flexShrink: 0, color: '#60a5fa' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', marginBottom: '3px', color: '#f1f5f9', fontSize: '13px' }}>Email Us</div>
-                    <div style={{ fontSize: '12px', opacity: 0.9 }}>kinshuksaxena3@gmail.com</div>
-                  </div>
-                </a>
-                
-                <a 
-                  href="tel:+919057538521"
-                  className="contact-item"
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start', 
-                    gap: '12px', 
-                    color: '#cbd5e1',
-                    textDecoration: 'none',
-                    transition: 'all 0.2s ease',
-                    padding: '10px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}
-                >
-                  <Phone size={18} style={{ marginTop: '2px', flexShrink: 0, color: '#34d399' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', marginBottom: '3px', color: '#f1f5f9', fontSize: '13px' }}>Call Us</div>
-                    <div style={{ fontSize: '12px', opacity: 0.9 }}>+91 9057538521</div>
-                    <div style={{ fontSize: '11px', opacity: 0.7 }}>Mon-Sat 9AM-6PM IST</div>
-                  </div>
-                </a>
-
-                <div 
-                  className="contact-item"
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start', 
-                    gap: '12px', 
-                    color: '#cbd5e1',
-                    padding: '10px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}
-                >
-                  <MapPin size={18} style={{ marginTop: '2px', flexShrink: 0, color: '#f59e0b' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', marginBottom: '3px', color: '#f1f5f9', fontSize: '13px' }}>Visit Us</div>
-                    <div style={{ fontSize: '12px', opacity: 0.9, lineHeight: '1.5' }}>
-                      165, Champa Nagar, Gujar Ki Thadi<br />
-                      Jaipur, Rajasthan 302019
-                    </div>
-                    <a 
-                      href="https://portfolio-frontend-mu-snowy.vercel.app/contact"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '11px',
-                        color: '#60a5fa',
-                        textDecoration: 'none',
-                        marginTop: '6px'
-                      }}
-                    >
-                      Get Directions <ExternalLink size={11} />
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Business Hours */}
-              <div style={{
-                padding: '16px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                <h5 style={{ 
-                  fontSize: '14px', 
-                  marginBottom: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontWeight: '600',
-                  color: '#f1f5f9'
-                }}>
-                  <Clock size={16} color="#f59e0b" /> Business Hours
-                </h5>
-                <div style={{ fontSize: '12px', lineHeight: '1.8', opacity: 0.9 }}>
-                  <div><strong>Mon - Fri:</strong> 9:00 AM - 6:00 PM</div>
-                  <div><strong>Saturday:</strong> 10:00 AM - 4:00 PM</div>
-                  <div><strong>Sunday:</strong> Closed</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Social Media & Additional Info - Column 3 */}
-            <div className="animate-fadeInUp delay-200" style={{ maxWidth: '340px', width: '100%' }}>
-              <h4 style={{ marginBottom: '20px', fontSize: '17px', fontWeight: '600', color: '#f1f5f9' }}>
-                Connect With Us
-              </h4>
-              <p style={{ 
-                color: '#cbd5e1', 
-                fontSize: '13px', 
-                marginBottom: '16px',
-                lineHeight: '1.6' 
-              }}>
-                Follow us on social media for exclusive offers, product updates, and behind-the-scenes content!
-              </p>
-              
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(4, 1fr)', 
-                gap: '10px',
-                marginBottom: '28px'
-              }}>
-                {socialLinks.map((social) => (
-                  <a
-                    key={social.name}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-link"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '100%',
-                      height: '48px',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      borderRadius: '10px',
-                      color: 'white',
-                      textDecoration: 'none',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}
-                    aria-label={social.name}
-                  >
-                    <social.icon size={20} />
-                  </a>
-                ))}
-              </div>
-
-              {/* Additional Info */}
-              <div style={{
-                padding: '16px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                marginBottom: '16px'
-              }}>
-                <h5 style={{ 
-                  fontSize: '14px', 
-                  marginBottom: '12px',
-                  fontWeight: '600',
-                  color: '#f1f5f9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <Shield size={16} color="#34d399" /> Secure Shopping
-                </h5>
-                <p style={{ fontSize: '12px', lineHeight: '1.7', opacity: 0.9, margin: 0 }}>
-                  SSL encrypted checkout, multiple payment options, and secure data protection for your peace of mind.
-                </p>
-              </div>
-
-              <div style={{
-                padding: '16px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                <h5 style={{ 
-                  fontSize: '14px', 
-                  marginBottom: '12px',
-                  fontWeight: '600',
-                  color: '#f1f5f9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <Award size={16} color="#fbbf24" /> Quality Guarantee
-                </h5>
-                <p style={{ fontSize: '12px', lineHeight: '1.7', opacity: 0.9, margin: 0 }}>
-                  100% authentic products with manufacturer warranty. 30-day easy returns and hassle-free exchanges.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Footer - Centered Copyright */}
-          <div style={{
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            padding: '24px 20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ 
-              margin: 0,
-              color: '#f1f5f9',
-              fontSize: '14px',
-              fontWeight: '700',
-              letterSpacing: '0.3px'
-            }}>
-              &copy; {currentYear} MERN Store by Kinshuk Saxena. All rights reserved.
+            <p className="text-steel text-sm font-body leading-relaxed mb-6">
+              Premium e-commerce built on the MERN stack. Discover curated products with an unparalleled shopping experience.
             </p>
+            <div className="flex items-center gap-3">
+              {socialLinks.map((s) => (
+                <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 hover:-translate-y-0.5"
+                  style={{ background: "rgba(255,255,255,0.06)", color: "#8A8A9A", border: "1px solid rgba(255,255,255,0.07)" }}
+                  onMouseEnter={e => { e.currentTarget.style.color = "#B87333"; e.currentTarget.style.borderColor = "rgba(184,115,51,0.3)"; e.currentTarget.style.boxShadow = "0 0 16px rgba(184,115,51,0.2)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = "#8A8A9A"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; }}>
+                  {s.icon}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="font-heading text-lg text-gradient-copper tracking-wide mb-4">Quick Links</h4>
+            <ul className="space-y-2.5">
+              {[{ to: "/product", label: "Shop Now" }, { to: "/about", label: "About Us" }, { to: "/order", label: "Track Order" }, { to: "/cart", label: "My Cart" }].map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="text-steel hover:text-chrome text-sm font-body transition-colors flex items-center gap-1.5 group">
+                    <span className="text-copper opacity-0 group-hover:opacity-100 transition-opacity text-xs">›</span>
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Categories */}
+          <div>
+            <h4 className="font-heading text-lg text-gradient-copper tracking-wide mb-4">Categories</h4>
+            <ul className="space-y-2.5">
+              {["Electronics", "Fashion", "Home & Living", "Sports", "Books", "General"].map((cat) => (
+                <li key={cat}>
+                  <Link to={`/product?category=${cat}`} className="text-steel hover:text-chrome text-sm font-body transition-colors flex items-center gap-1.5 group">
+                    <span className="text-copper opacity-0 group-hover:opacity-100 transition-opacity text-xs">›</span>
+                    {cat}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="font-heading text-lg text-gradient-copper tracking-wide mb-4">Contact</h4>
+            <ul className="space-y-3">
+              {[
+                { icon: "✉", text: "kinshuksaxena3@gmail.com", href: "mailto:kinshuksaxena3@gmail.com" },
+                { icon: "📞", text: "+91 9057538521", href: "tel:+919057538521" },
+                { icon: "📍", text: "Jaipur, Rajasthan, India" },
+              ].map(({ icon, text, href }) => (
+                <li key={text}>
+                  {href ? (
+                    <a href={href} className="flex items-start gap-2.5 text-steel text-sm font-body hover:text-copper transition-colors">
+                      <span className="text-copper mt-0.5">{icon}</span>
+                      <span>{text}</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-start gap-2.5 text-steel text-sm font-body">
+                      <span className="text-copper mt-0.5">{icon}</span>
+                      <span>{text}</span>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        {/* Scroll to Top Button */}
-        {showScrollTop && (
-          <button
-            onClick={scrollToTop}
-            className="scroll-to-top"
-            style={{
-              position: 'fixed',
-              bottom: '28px',
-              right: '28px',
-              width: '52px',
-              height: '52px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              border: 'none',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
-              zIndex: 1000,
-              animation: 'fadeInUp 0.3s ease-out',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-            aria-label="Scroll to top"
-          >
-            <ChevronUp size={24} strokeWidth={2.5} />
-          </button>
-        )}
-      </footer>
+        <div className="metal-divider my-10" />
 
-      {/* Add custom styles */}
-      <style jsx>{`
-        .social-link:hover {
-          transform: translateY(-4px) scale(1.05);
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-          border-color: transparent !important;
-          box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
-        }
-
-        .footer-link:hover {
-          color: #60a5fa !important;
-          padding-left: 4px;
-        }
-
-        .footer-link:hover svg {
-          opacity: 1 !important;
-          transform: translateX(4px);
-        }
-
-        .contact-item:hover {
-          background: rgba(255, 255, 255, 0.1) !important;
-          transform: translateX(4px);
-          border-color: rgba(96, 165, 250, 0.3) !important;
-        }
-
-        .feature-card:hover {
-          transform: translateY(-6px);
-          background: rgba(255, 255, 255, 0.08) !important;
-          border-color: rgba(102, 126, 234, 0.5) !important;
-          box-shadow: 0 12px 30px rgba(102, 126, 234, 0.2);
-        }
-
-        .scroll-to-top:hover {
-          transform: translateY(-5px) scale(1.1) !important;
-          box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5) !important;
-        }
-
-        @media (max-width: 768px) {
-          .features-section .container > div {
-            grid-template-columns: 1fr;
-            gap: 20px;
-          }
-
-          footer .container > div:first-of-type {
-            grid-template-columns: 1fr;
-            padding: 40px 20px 24px;
-            gap: 36px;
-          }
-
-          .scroll-to-top {
-            bottom: 20px !important;
-            right: 20px !important;
-            width: 46px !important;
-            height: 46px !important;
-          }
-
-          .social-link {
-            height: 42px !important;
-          }
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out backwards;
-        }
-
-        .delay-100 {
-          animation-delay: 0.1s;
-        }
-
-        .delay-200 {
-          animation-delay: 0.2s;
-        }
-
-        .delay-300 {
-          animation-delay: 0.3s;
-        }
-      `}</style>
-    </>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-steel text-xs font-body">
+            © {new Date().getFullYear()} MERN Store. Built with ❤️ by <a href="https://github.com/kinshukkush" className="text-copper hover:text-copper-light transition-colors">Kinshuk</a>.
+          </p>
+          <div className="flex items-center gap-4">
+            {["Privacy Policy", "Terms of Service", "Refund Policy"].map((t) => (
+              <button key={t} className="text-steel hover:text-chrome text-xs font-body transition-colors cursor-pointer">{t}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }

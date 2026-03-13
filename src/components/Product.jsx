@@ -1,581 +1,211 @@
-import React, { useEffect, useState, useContext } from "react";
-import axios from "axios";
-import { ShoppingCart, Star, Heart, Eye, Package, Check, Plus, X } from "lucide-react";
-import { AppContext } from "../App";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
+import { useAuth } from "../context/AuthContext";
+import api from "../utils/api";
+
+const CATEGORIES = ["All", "Electronics", "Fashion", "Home & Living", "Sports", "Books", "General"];
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest" },
+  { value: "price_asc", label: "Price: Low → High" },
+  { value: "price_desc", label: "Price: High → Low" },
+];
+
+function ProductSkeleton() {
+  return (
+    <div className="metal-card overflow-hidden">
+      <div className="skeleton h-52 w-full" />
+      <div className="p-4 space-y-3">
+        <div className="skeleton h-4 w-3/4 rounded" />
+        <div className="skeleton h-3 w-1/2 rounded" />
+        <div className="skeleton h-8 w-full rounded" />
+      </div>
+    </div>
+  );
+}
+
+function ProductCard({ product, onAddToCart, adding }) {
+  const fmtPrice = (p) => `₹${Number(p).toLocaleString("en-IN")}`;
+  return (
+    <Link to={`/product/${product._id}`} className="product-card flex flex-col group cursor-pointer">
+      <div className="relative overflow-hidden" style={{ height: "200px" }}>
+        <img
+          src={product.imageUrl || `https://picsum.photos/seed/${product._id}/400/300`}
+          alt={product.name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => { e.target.src = `https://picsum.photos/seed/${product._id}/400/300`; }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-obsidian/80 via-transparent to-transparent pointer-events-none" />
+        {product.category && (
+          <span className="absolute top-3 left-3 badge badge-admin text-[10px]">{product.category}</span>
+        )}
+        {product.stock === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center bg-obsidian/60 backdrop-blur-sm">
+            <span className="font-heading text-xl text-steel-light">OUT OF STOCK</span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-4 flex flex-col flex-1 gap-3">
+        <div className="flex-1">
+          <h3 className="font-body font-semibold text-chrome text-sm leading-tight mb-1 line-clamp-2 group-hover:text-copper transition-colors">{product.name}</h3>
+          {product.description && (
+            <p className="text-steel text-xs font-body line-clamp-1">{product.description}</p>
+          )}
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="font-heading text-xl text-gradient-gold">{fmtPrice(product.price)}</span>
+          {product.stock > 0 && <span className="text-xs text-steel font-body">{product.stock} left</span>}
+        </div>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onAddToCart(product);
+          }}
+          disabled={product.stock === 0 || adding === product._id}
+          className="btn-copper w-full py-2.5 text-sm"
+          style={{ opacity: product.stock === 0 ? 0.4 : 1 }}>
+          {adding === product._id ? (
+            <span className="flex items-center gap-2">
+              <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Adding…
+            </span>
+          ) : product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+        </button>
+      </div>
+    </Link>
+  );
+}
 
 export default function Product() {
-  const API_URL = import.meta.env.VITE_API_URL;
   const [products, setProducts] = useState([]);
-  const [error, setError] = useState();
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [wishlist, setWishlist] = useState([]);
-  const { user, cart, setCart } = useContext(AppContext);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [category, setCategory] = useState("All");
+  const [sort, setSort] = useState("newest");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [adding, setAdding] = useState(null);
+  const { addToCart, isLoggedIn } = { ...useCart(), ...useAuth() };
+  const toast = useToast();
+  const navigate = useNavigate();
 
-  // Dark mode theme
-  const theme = {
-    bg: '#0f172a',
-    bgSecondary: '#1e293b',
-    bgTertiary: '#334155',
-    text: '#f1f5f9',
-    textSecondary: '#cbd5e1',
-    border: '#334155',
-    cardBg: '#1e293b'
-  };
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const fetchProducts = async () => {
+  useEffect(() => { setPage(1); }, [category]);
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const url = `${API_URL}/api/products/all`;
-      const result = await axios.get(url);
-      setProducts(result.data.products || []);
-      setError(null);
-    } catch (err) {
-      console.log(err);
-      setError("Failed to load products. Please try again later.");
+      const params = new URLSearchParams({ page, limit: 12, search: debouncedSearch });
+      if (category !== "All") params.set("category", category);
+      const { data } = await api.get(`/api/products/all?${params}`);
+      let items = data.products || [];
+      if (sort === "price_asc") items = [...items].sort((a, b) => a.price - b.price);
+      if (sort === "price_desc") items = [...items].sort((a, b) => b.price - a.price);
+      setProducts(items);
+      setTotalPages(data.total || 1);
+    } catch {
+      toast.error("Failed to load products.");
     } finally {
       setLoading(false);
     }
+  }, [page, debouncedSearch, category, sort]);
+
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  const handleAddToCart = async (product) => {
+    const { isLoggedIn } = { isLoggedIn: !!JSON.parse(localStorage.getItem("user") || "null")?.token };
+    if (!isLoggedIn) { toast.info("Please sign in to add items to cart."); navigate("/login"); return; }
+    setAdding(product._id);
+    addToCart(product);
+    toast.success(`${product.name} added to cart!`);
+    setTimeout(() => setAdding(null), 800);
   };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const addToCart = (product) => {
-    const found = cart.find((item) => item._id === product._id);
-    if (!found) {
-      product.qty = 1;
-      setCart([...cart, product]);
-    }
-  };
-
-  const isInCart = (productId) => {
-    return cart.some(item => item._id === productId);
-  };
-
-  const toggleWishlist = (product) => {
-    const isWishlisted = wishlist.some(item => item._id === product._id);
-    if (isWishlisted) {
-      setWishlist(wishlist.filter(item => item._id !== product._id));
-    } else {
-      setWishlist([...wishlist, product]);
-    }
-  };
-
-  const isInWishlist = (productId) => {
-    return wishlist.some(item => item._id === productId);
-  };
-
-  const openQuickView = (product) => {
-    setSelectedProduct(product);
-  };
-
-  const closeQuickView = () => {
-    setSelectedProduct(null);
-  };
-
-  if (loading) {
-    return (
-      <div className="page-wrapper">
-        <div className="container">
-          <div className="loading">
-            <Package size={32} />
-            <span style={{ marginLeft: '12px' }}>Loading products...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="page-wrapper fade-in">
-      <div className="container">
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{ 
-            fontSize: '3rem', 
-            fontWeight: '700',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            marginBottom: '16px'
-          }}>
-            Featured Products
-          </h1>
-          <p style={{ 
-            fontSize: '18px', 
-            color: theme.textSecondary,
-            maxWidth: '600px',
-            margin: '0 auto'
-          }}>
-            Discover our carefully curated collection of premium products, 
-            handpicked for quality and value.
-          </p>
+    <div className="min-h-screen bg-metal-radial">
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden py-16 px-4 text-center"
+        style={{ background: "linear-gradient(180deg, rgba(184,115,51,0.1) 0%, transparent 100%)" }}>
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-20"
+            style={{ background: "radial-gradient(ellipse, rgba(184,115,51,0.4) 0%, transparent 70%)" }} />
+        </div>
+        <h1 className="font-heading text-5xl sm:text-7xl text-gradient-steel mb-3 relative z-10">PREMIUM COLLECTION</h1>
+        <p className="text-steel font-body text-sm sm:text-base tracking-widest uppercase relative z-10">Crafted for the discerning buyer</p>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+        {/* Filters bar */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 items-start sm:items-center">
+          <div className="relative flex-1 max-w-md">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-steel pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search products…" className="metal-input pl-9 pr-4 py-2.5 text-sm w-full" />
+          </div>
+          <select value={sort} onChange={(e) => setSort(e.target.value)}
+            className="metal-input px-4 py-2.5 text-sm cursor-pointer">
+            {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value} style={{ background: "#1A1A26" }}>{o.label}</option>)}
+          </select>
         </div>
 
-        {error && (
-          <div className="error">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
-
-        {products.length === 0 && !loading && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '60px 20px',
-            color: theme.textSecondary
-          }}>
-            <Package size={64} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-            <h3 style={{ color: theme.text }}>No products available</h3>
-            <p>Check back later for new arrivals!</p>
-          </div>
-        )}
-
-        <div className="grid grid-3">
-          {products.map((product) => (
-            <div key={product._id} className="product-card fade-in" style={{
-              transform: 'translateY(0)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}>
-              <div style={{ 
-                position: 'relative', 
-                overflow: 'hidden', 
-                borderRadius: '12px 12px 0 0', 
-                height: '250px',
-                pointerEvents: 'none'
-              }}>
-                <img 
-                  src={product.imgUrl || 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg'} 
-                  alt={product.productName}
-                  className="product-image"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.5s ease',
-                    pointerEvents: 'none'
-                  }}
-                  onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
-                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-                />
-                
-                {/* Action Buttons */}
-                <div 
-                  className="product-actions"
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'opacity 0.3s ease',
-                    zIndex: 100,
-                    pointerEvents: 'auto'
-                  }}>
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      toggleWishlist(product);
-                    }}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      border: 'none',
-                      background: isInWishlist(product._id) ? '#ef4444' : 'rgba(255, 255, 255, 0.95)',
-                      color: isInWishlist(product._id) ? 'white' : '#374151',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                      zIndex: 101,
-                      pointerEvents: 'auto'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                    title={isInWishlist(product._id) ? "Remove from wishlist" : "Add to wishlist"}
-                  >
-                    <Heart size={18} fill={isInWishlist(product._id) ? 'white' : 'none'} />
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      openQuickView(product);
-                    }}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      border: 'none',
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      color: '#374151',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                      zIndex: 101,
-                      pointerEvents: 'auto'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                    title="Quick view"
-                  >
-                    <Eye size={18} />
-                  </button>
-                </div>
-
-                {/* Stock Badge */}
-                {product.stock && product.stock > 0 && product.stock < 10 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    background: '#ef4444',
-                    color: 'white',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600'
-                  }}>
-                    Only {product.stock} left!
-                  </div>
-                )}
-              </div>
-              
-              <div className="product-content" style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                height: '100%',
-                minHeight: '280px'
-              }}>
-                <h3 className="product-title" style={{ 
-                  minHeight: '50px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  {product.productName}
-                </h3>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  marginBottom: '8px'
-                }}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      size={14} 
-                      fill={i < 4 ? "#fbbf24" : "none"} 
-                      color="#fbbf24" 
-                    />
-                  ))}
-                  <span style={{ 
-                    fontSize: '12px', 
-                    color: theme.textSecondary,
-                    marginLeft: '8px'
-                  }}>
-                    (4.0) • 127 reviews
-                  </span>
-                </div>
-                
-                <p className="product-description" style={{
-                  minHeight: '60px',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  marginBottom: '16px'
-                }}>
-                  {product.description || "Premium quality product with excellent features and durability."}
-                </p>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  marginBottom: 'auto',
-                  paddingBottom: '16px'
-                }}>
-                  <div className="product-price">₹{product.price}</div>
-                  <div style={{ 
-                    fontSize: '12px', 
-                    color: '#059669',
-                    background: '#d1fae5',
-                    padding: '4px 8px',
-                    borderRadius: '4px'
-                  }}>
-                    In Stock
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addToCart(product);
-                  }}
-                  disabled={isInCart(product._id)}
-                  className={`btn ${isInCart(product._id) ? 'btn-success' : 'btn-primary'}`}
-                  style={{ 
-                    width: '100%',
-                    cursor: isInCart(product._id) ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    transition: 'all 0.3s ease',
-                    marginTop: 'auto'
-                  }}
-                >
-                  {isInCart(product._id) ? (
-                    <>
-                      <Check size={16} />
-                      Added to Cart
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={16} />
-                      Add to Cart
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+        {/* Category tabs */}
+        <div className="relative flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-1">
+          {CATEGORIES.map((cat) => (
+            <button key={cat} onClick={() => setCategory(cat)}
+              className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-body font-medium transition-all duration-200 ${category === cat ? "text-obsidian" : "text-steel hover:text-chrome"}`}
+              style={category === cat ? { background: "linear-gradient(135deg, #B87333, #D4AF37)", boxShadow: "0 4px 16px rgba(184,115,51,0.3)" } : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {cat}
+            </button>
           ))}
         </div>
 
-        {/* Quick View Modal */}
-        {selectedProduct && (
-          <div className="quick-view-modal" onClick={closeQuickView}>
-            <div className="quick-view-content" onClick={(e) => e.stopPropagation()}>
-              <button className="quick-view-close" onClick={closeQuickView}>
-                <X size={20} />
-              </button>
-              
-              <div className="quick-view-body">
-                <div>
-                  <img 
-                    src={selectedProduct.imgUrl || 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg'} 
-                    alt={selectedProduct.productName}
-                    className="quick-view-image"
-                  />
-                </div>
-                
-                <div className="quick-view-details">
-                  <h2>{selectedProduct.productName}</h2>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '4px',
-                    marginBottom: '16px'
-                  }}>
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        size={16} 
-                        fill={i < 4 ? "#fbbf24" : "none"} 
-                        color="#fbbf24" 
-                      />
-                    ))}
-                    <span style={{ 
-                      fontSize: '14px', 
-                      color: theme.textSecondary,
-                      marginLeft: '8px'
-                    }}>
-                      (4.0) • 127 reviews
-                    </span>
-                  </div>
-                  
-                  <div className="product-price">₹{selectedProduct.price}</div>
-                  
-                  <p className="product-description">
-                    {selectedProduct.description || "Premium quality product with excellent features and durability. This item is crafted with attention to detail and designed to meet your expectations."}
-                  </p>
-                  
-                  <div className="quick-view-stock">
-                    <Package size={16} />
-                    <span>
-                      {selectedProduct.stock >= 10 
-                        ? 'In Stock' 
-                        : `Only ${selectedProduct.stock} left!`}
-                    </span>
-                  </div>
-                  
-                  <div style={{
-                    background: theme.bgSecondary,
-                    padding: '16px',
-                    borderRadius: '12px',
-                    marginBottom: '24px'
-                  }}>
-                    <h4 style={{ 
-                      fontSize: '14px', 
-                      fontWeight: 600,
-                      marginBottom: '12px',
-                      color: theme.text 
-                    }}>
-                      Product Features
-                    </h4>
-                    <ul style={{
-                      listStyle: 'none',
-                      padding: 0,
-                      margin: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px'
-                    }}>
-                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
-                        <Check size={16} color="#10b981" />
-                        Premium Quality Materials
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
-                        <Check size={16} color="#10b981" />
-                        Fast & Free Shipping
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
-                        <Check size={16} color="#10b981" />
-                        30-Day Money Back Guarantee
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: theme.textSecondary }}>
-                        <Check size={16} color="#10b981" />
-                        24/7 Customer Support
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <div className="quick-view-actions">
-                    <button 
-                      onClick={() => {
-                        addToCart(selectedProduct);
-                        closeQuickView();
-                      }}
-                      disabled={isInCart(selectedProduct._id)}
-                      className={`btn ${isInCart(selectedProduct._id) ? 'btn-success' : 'btn-primary'}`}
-                      style={{ 
-                        flex: 1,
-                        cursor: isInCart(selectedProduct._id) ? 'default' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                    >
-                      {isInCart(selectedProduct._id) ? (
-                        <>
-                          <Check size={16} />
-                          Added to Cart
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart size={16} />
-                          Add to Cart
-                        </>
-                      )}
-                    </button>
-                    
-                    <button 
-                      onClick={() => toggleWishlist(selectedProduct)}
-                      style={{
-                        background: isInWishlist(selectedProduct._id) ? '#ef4444' : theme.bgSecondary,
-                        color: isInWishlist(selectedProduct._id) ? 'white' : theme.text,
-                        border: 'none',
-                        borderRadius: '12px',
-                        padding: '12px 24px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontWeight: 600,
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <Heart 
-                        size={16} 
-                        fill={isInWishlist(selectedProduct._id) ? 'white' : 'none'}
-                      />
-                      {isInWishlist(selectedProduct._id) ? 'Wishlisted' : 'Add to Wishlist'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Product grid */}
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="text-7xl mb-4 opacity-20">🛒</div>
+            <h3 className="font-heading text-2xl text-gradient-steel mb-2">NO PRODUCTS FOUND</h3>
+            <p className="text-steel font-body text-sm">Try a different search or category</p>
+            <button onClick={() => { setSearch(""); setCategory("All"); }} className="btn-ghost px-6 py-2.5 mt-4 text-sm">
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 animate-scale-fade">
+            {products.map((p) => (
+              <ProductCard key={p._id} product={p} onAddToCart={handleAddToCart} adding={adding} />
+            ))}
           </div>
         )}
 
-        {products.length > 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            marginTop: '40px',
-            padding: '20px',
-            background: theme.bgSecondary,
-            borderRadius: '12px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
-            border: `1px solid ${theme.border}`
-          }}>
-            <h3 style={{ marginBottom: '8px', color: theme.text }}>Why Choose Our Products?</h3>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '20px',
-              marginTop: '20px'
-            }}>
-              <div>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🚚</div>
-                <strong style={{ color: theme.text }}>Free Shipping</strong>
-                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
-                  On orders over ₹500
-                </p>
-              </div>
-              <div>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔒</div>
-                <strong style={{ color: theme.text }}>Secure Payment</strong>
-                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
-                  100% secure transactions
-                </p>
-              </div>
-              <div>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>↩️</div>
-                <strong style={{ color: theme.text }}>Easy Returns</strong>
-                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
-                  30-day return policy
-                </p>
-              </div>
-              <div>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>⭐</div>
-                <strong style={{ color: theme.text }}>Quality Guaranteed</strong>
-                <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '4px 0 0' }}>
-                  Premium products only
-                </p>
-              </div>
-            </div>
+        {/* Pagination */}
+        {totalPages > 1 && !loading && (
+          <div className="flex items-center justify-center gap-2 mt-12">
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+              className="btn-ghost px-4 py-2 text-sm" style={{ opacity: page === 1 ? 0.4 : 1 }}>← Prev</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button key={p} onClick={() => setPage(p)}
+                className={`w-9 h-9 rounded-lg text-sm font-body transition-all ${p === page ? "text-obsidian" : "text-steel hover:text-chrome"}`}
+                style={p === page ? { background: "linear-gradient(135deg, #B87333, #D4AF37)" } : { background: "rgba(255,255,255,0.05)" }}>
+                {p}
+              </button>
+            ))}
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="btn-ghost px-4 py-2 text-sm" style={{ opacity: page === totalPages ? 0.4 : 1 }}>Next →</button>
           </div>
         )}
       </div>

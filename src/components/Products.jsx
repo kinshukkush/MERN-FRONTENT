@@ -1,600 +1,208 @@
-import React from "react";
-import { useEffect, useState, useContext } from "react";
-import { useRef } from "react";
-import { 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search,
-  Download,
-  DollarSign,
-  Image,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  Eye
-} from "lucide-react";
-import axios from "axios";
-import { AppContext } from "../App";
+import { useState, useEffect, useCallback } from "react";
+import { useToast } from "../context/ToastContext";
+import api from "../utils/api";
+
+const CATEGORIES = ["Electronics", "Fashion", "Home & Living", "Sports", "Books", "General"];
+const EMPTY_FORM = { name: "", description: "", price: "", category: "General", imageUrl: "", stock: "" };
+
+function ProductModal({ open, onClose, onSave, initial }) {
+  const [form, setForm] = useState(initial || EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setForm(initial || EMPTY_FORM); }, [initial]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    await onSave({ ...form, price: Number(form.price), stock: Number(form.stock) });
+    setSaving(false);
+  };
+
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content p-6 max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+        <h2 className="font-heading text-2xl text-gradient-copper mb-5">{initial?._id ? "EDIT PRODUCT" : "ADD PRODUCT"}</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {[{ key: "name", label: "Product Name", placeholder: "e.g. Wireless Headphones" },
+            { key: "description", label: "Description", placeholder: "Short description…" },
+            { key: "imageUrl", label: "Image URL", placeholder: "https://…" },
+          ].map(({ key, label, placeholder }) => (
+            <div key={key}>
+              <label className="metal-label">{label}</label>
+              <input value={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+                placeholder={placeholder} className="metal-input px-4 py-2.5 text-sm" />
+            </div>
+          ))}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="metal-label">Price (₹)</label>
+              <input type="number" min="0" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
+                placeholder="999" className="metal-input px-4 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label className="metal-label">Stock</label>
+              <input type="number" min="0" value={form.stock} onChange={(e) => setForm((p) => ({ ...p, stock: e.target.value }))}
+                placeholder="50" className="metal-input px-4 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label className="metal-label">Category</label>
+              <select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+                className="metal-input px-3 py-2.5 text-sm cursor-pointer">
+                {CATEGORIES.map((c) => <option key={c} value={c} style={{ background: "#1A1A26" }}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={saving} className="btn-copper flex-1 py-3 text-sm">
+              {saving ? "Saving…" : initial?._id ? "Update Product" : "Add Product"}
+            </button>
+            <button type="button" onClick={onClose} className="btn-ghost flex-1 py-3 text-sm">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function DeleteConfirm({ open, onClose, onConfirm, name }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content p-6 max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
+        <div className="text-5xl mb-4">⚠️</div>
+        <h3 className="font-heading text-xl text-gradient-steel mb-2">DELETE PRODUCT?</h3>
+        <p className="text-steel text-sm font-body mb-6">"{name}" will be permanently removed.</p>
+        <div className="flex gap-3">
+          <button onClick={onConfirm} className="btn-danger flex-1 py-3 text-sm font-medium">Delete</button>
+          <button onClick={onClose} className="btn-ghost flex-1 py-3 text-sm">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Products() {
-  const { user } = useContext(AppContext);
+  const toast = useToast();
   const [products, setProducts] = useState([]);
-  const [error, setError] = useState();
-  const [loading, setLoading] = useState(false);
-  const frmRef = useRef();
-  const [form, setForm] = useState({
-    productName: "",
-    description: "",
-    price: "",
-    imgUrl: "",
-  });
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [searchVal, setSearchVal] = useState("");
   const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [editId, setEditId] = useState();
-  const [showForm, setShowForm] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL;
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Debug: Check user on mount
-  useEffect(() => {
-    console.log('Products component - User:', { 
-      email: user?.email, 
-      role: user?.role, 
-      hasToken: !!user?.token,
-      apiUrl: API_URL
-    });
-  }, [user]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Check if user is logged in
-      if (!user?.token) {
-        setError("Please login to view products.");
-        setLoading(false);
-        return;
-      }
-      
-      const url = `${API_URL}/api/products/?page=${page}&limit=${limit}&search=${searchVal}`;
-      const result = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      setProducts(result.data.products || []);
-      setTotalPages(result.data.total || 1);
-    } catch (err) {
-      console.error('Fetch products error:', err.response?.data || err.message);
-      const errorMsg = err.response?.data?.message || "Failed to load products. Please try again.";
-      setError(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const { data } = await api.get(`/api/products?page=${page}&limit=10&search=${search}`);
+      setProducts(data.products || []);
+      setTotalPages(data.total || 1);
+    } catch { toast.error("Failed to load products."); }
+    finally { setLoading(false); }
+  }, [page, search]);
 
-  useEffect(() => {
-    if (user?.token) {
-      fetchProducts();
-    }
-  }, [page, user?.token]);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
-    
+  const handleSave = async (form) => {
     try {
-      console.log('Deleting product:', { 
-        id, 
-        userRole: user?.role,
-        hasToken: !!user?.token 
-      });
-      
-      if (!user?.token) {
-        setError("No authentication token. Please login again.");
-        return;
+      if (editProduct?._id) {
+        await api.patch(`/api/products/${editProduct._id}`, form);
+        toast.success("Product updated!");
+      } else {
+        await api.post("/api/products", form);
+        toast.success("Product added!");
       }
-      
-      if (user.role !== 'admin') {
-        setError("Admin access required to delete products.");
-        return;
-      }
-      
-      const url = `${API_URL}/api/products/${id}`;
-      await axios.delete(url, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      
-      console.log('Product deleted successfully');
-      setError(null);
+      setModalOpen(false); setEditProduct(null);
       fetchProducts();
-    } catch (err) {
-      console.error('Delete product error:', err.response?.data || err.message);
-      const errorMsg = err.response?.data?.message || "Failed to delete product. Please try again.";
-      setError(errorMsg);
-    }
+    } catch (err) { toast.error(err.response?.data?.message || "Save failed."); }
   };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    const frm = frmRef.current;
-    if (!frm.checkValidity()) {
-      frm.reportValidity();
-      return;
-    }
+  const handleDelete = async () => {
     try {
-      if (!user?.token) {
-        setError("No authentication token. Please login again.");
-        return;
-      }
-      
-      if (user.role !== 'admin') {
-        setError("Admin access required to add products.");
-        return;
-      }
-      
-      setLoading(true);
-      const url = `${API_URL}/api/products`;
-      await axios.post(url, form, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      setError(null);
-      fetchProducts();
-      resetForm();
-      setShowForm(false);
-    } catch (err) {
-      console.error('Add product error:', err.response?.data || err.message);
-      const errorMsg = err.response?.data?.message || "Failed to add product. Please try again.";
-      setError(errorMsg);
-    } finally {
-      setLoading(false);
-    }
+      await api.delete(`/api/products/${deleteTarget._id}`);
+      toast.success("Product deleted.");
+      setDeleteTarget(null); fetchProducts();
+    } catch { toast.error("Delete failed."); }
   };
 
-  const handleEdit = (product) => {
-    setEditId(product._id);
-    setForm({
-      productName: product.productName,
-      description: product.description,
-      price: product.price,
-      imgUrl: product.imgUrl,
-    });
-    setShowForm(true);
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    const frm = frmRef.current;
-    if (!frm.checkValidity()) {
-      frm.reportValidity();
-      return;
-    }
-    try {
-      if (!user?.token) {
-        setError("No authentication token. Please login again.");
-        return;
-      }
-      
-      if (user.role !== 'admin') {
-        setError("Admin access required to update products.");
-        return;
-      }
-      
-      setLoading(true);
-      const url = `${API_URL}/api/products/${editId}`;
-      await axios.patch(url, form, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      fetchProducts();
-      setEditId();
-      resetForm();
-      setShowForm(false);
-      setError(null);
-    } catch (err) {
-      console.error('Update product error:', err.response?.data || err.message);
-      const errorMsg = err.response?.data?.message || "Failed to update product. Please try again.";
-      setError(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditId();
-    resetForm();
-    setShowForm(false);
-  };
-
-  const resetForm = () => {
-    setForm({
-      productName: "",
-      description: "",
-      price: "",
-      imgUrl: "",
-    });
-  };
-
-  const handleSearch = () => {
-    setPage(1);
-    fetchProducts();
-  };
+  const fmtPrice = (p) => `₹${Number(p).toLocaleString("en-IN")}`;
 
   return (
-    <div className="fade-in">
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '32px'
-      }}>
-        <div>
-          <h2 style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px',
-            marginBottom: '8px'
-          }}>
-            <Package size={28} />
-            Product Management
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-            Manage your product catalog and inventory
-          </p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex-1">
+          <h1 className="font-heading text-4xl text-gradient-steel mb-1">PRODUCTS</h1>
+          <p className="text-steel text-xs font-body">Manage your product catalog</p>
         </div>
-        
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn btn-secondary">
-            <Download size={16} />
-            Export
-          </button>
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            className="btn btn-primary"
-          >
-            <Plus size={16} />
-            Add Product
-          </button>
-        </div>
+        <button onClick={() => { setEditProduct(null); setModalOpen(true); }}
+          className="btn-copper px-6 py-2.5 text-sm">+ Add Product</button>
       </div>
 
-      {error && (
-        <div className="error">
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      {/* Add/Edit Form */}
-      {showForm && (
-        <div className="card" style={{ marginBottom: '24px' }}>
-          <h3 style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            marginBottom: '20px'
-          }}>
-            <Plus size={20} />
-            {editId ? 'Edit Product' : 'Add New Product'}
-          </h3>
-          
-          <form ref={frmRef} onSubmit={editId ? handleUpdate : handleAdd}>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '20px',
-              marginBottom: '24px'
-            }}>
-              <div className="form-group">
-                <label className="form-label">
-                  <Package size={16} />
-                  Product Name
-                </label>
-                <input
-                  name="productName"
-                  value={form.productName}
-                  type="text"
-                  className="form-input"
-                  placeholder="Enter product name"
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <DollarSign size={16} />
-                  Price
-                </label>
-                <input
-                  name="price"
-                  value={form.price}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className="form-input"
-                  placeholder="Enter price"
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">
-                  <FileText size={16} />
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  className="form-input"
-                  placeholder="Enter product description"
-                  onChange={handleChange}
-                  rows="3"
-                  required
-                  style={{ resize: 'vertical' }}
-                />
-              </div>
-
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">
-                  <Image size={16} />
-                  Image URL
-                </label>
-                <input
-                  name="imgUrl"
-                  value={form.imgUrl}
-                  type="url"
-                  className="form-input"
-                  placeholder="Enter image URL"
-                  onChange={handleChange}
-                  required
-                />
-                {form.imgUrl && (
-                  <div style={{ marginTop: '12px' }}>
-                    <img 
-                      src={form.imgUrl} 
-                      alt="Preview"
-                      style={{ 
-                        width: '100px', 
-                        height: '100px', 
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        border: '2px solid var(--border-color)'
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              {editId ? (
-                <>
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? 'Updating...' : 'Update Product'}
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={handleCancel}
-                    className="btn btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={loading}
-                >
-                  {loading ? 'Adding...' : 'Add Product'}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Search and Filters */}
-      <div className="card" style={{ marginBottom: '24px' }}>
-        <div className="search-container">
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search 
-              size={18} 
-              style={{ 
-                position: 'absolute', 
-                left: '12px', 
-                top: '50%', 
-                transform: 'translateY(-50%)',
-                color: 'var(--text-muted)'
-              }} 
-            />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search products by name or description..."
-              value={searchVal}
-              onChange={(e) => setSearchVal(e.target.value)}
-              style={{ paddingLeft: '44px' }}
-            />
-          </div>
-          <button onClick={handleSearch} className="btn btn-primary">
-            <Search size={16} />
-            Search
-          </button>
-          <select 
-            className="form-select"
-            style={{ width: 'auto', minWidth: '120px' }}
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-          >
-            <option value={5}>5 per page</option>
-            <option value={10}>10 per page</option>
-            <option value={25}>25 per page</option>
-            <option value={50}>50 per page</option>
-          </select>
-        </div>
+      <div className="relative max-w-sm">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-steel" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Search products…" className="metal-input pl-9 pr-4 py-2.5 text-sm w-full" />
       </div>
 
-      {/* Products Table */}
-      <div className="card">
+      <div className="metal-card overflow-hidden">
         {loading ? (
-          <div className="loading">
-            <div className="spinner"></div>
-            <span>Loading products...</span>
-          </div>
-        ) : products.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '60px 20px',
-            color: 'var(--text-secondary)'
-          }}>
-            <Package size={64} style={{ opacity: 0.3, marginBottom: '16px' }} />
-            <h3>No products found</h3>
-            <p>Try adjusting your search criteria or add a new product.</p>
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-2 border-steel border-t-copper rounded-full animate-spin" />
           </div>
         ) : (
-          <>
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Description</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+          <div className="overflow-x-auto">
+            <table className="metal-table">
+              <thead><tr>
+                <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th>
+              </tr></thead>
+              <tbody>
+                {products.length === 0 && (
+                  <tr><td colSpan={6} className="text-center py-12 text-steel">No products found</td></tr>
+                )}
+                {products.map((p) => (
+                  <tr key={p._id}>
+                    <td>
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-obsidian-700">
+                        <img src={p.imageUrl || `https://picsum.photos/seed/${p._id}/200`} alt={p.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = `https://picsum.photos/seed/${p._id}/200`; }} />
+                      </div>
+                    </td>
+                    <td className="font-medium max-w-[180px] truncate">{p.name}</td>
+                    <td><span className="badge badge-admin text-[10px]">{p.category || "General"}</span></td>
+                    <td className="font-heading text-lg text-gradient-gold">{fmtPrice(p.price)}</td>
+                    <td className={p.stock === 0 ? "text-red-400" : "text-green-400"}>{p.stock}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { setEditProduct(p); setModalOpen(true); }}
+                          className="btn-ghost px-3 py-1.5 text-xs">Edit</button>
+                        <button onClick={() => setDeleteTarget(p)}
+                          className="btn-danger px-3 py-1.5 text-xs">Delete</button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product._id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <img 
-                            src={product.imgUrl || 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg'} 
-                            alt={product.productName}
-                            style={{ 
-                              width: '50px', 
-                              height: '50px', 
-                              objectFit: 'cover',
-                              borderRadius: '8px',
-                              border: '2px solid var(--border-color)'
-                            }}
-                          />
-                          <div>
-                            <div style={{ fontWeight: '600' }}>
-                              {product.productName}
-                            </div>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: 'var(--text-secondary)' 
-                            }}>
-                              ID: {product._id?.slice(-8)}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ 
-                          maxWidth: '200px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {product.description}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ 
-                          fontSize: '18px',
-                          fontWeight: '600',
-                          color: '#059669'
-                        }}>
-                          ₹{product.price}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="badge badge-completed">
-                          In Stock
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            className="btn btn-secondary btn-sm"
-                            title="View product"
-                          >
-                            <Eye size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleEdit(product)}
-                            className="btn btn-secondary btn-sm"
-                            title="Edit product"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(product._id)}
-                            className="btn btn-danger btn-sm"
-                            title="Delete product"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="pagination">
-              <button 
-                disabled={page === 1} 
-                onClick={() => setPage(page - 1)}
-                className="btn btn-secondary"
-              >
-                <ChevronLeft size={16} />
-                Previous
-              </button>
-              
-              <div className="pagination-info">
-                Page {page} of {totalPages} • {products.length} products
-              </div>
-              
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                className="btn btn-secondary"
-              >
-                Next
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-ghost px-4 py-2 text-sm" style={{ opacity: page === 1 ? 0.4 : 1 }}>← Prev</button>
+          <span className="text-steel font-body text-sm">Page {page} / {totalPages}</span>
+          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-ghost px-4 py-2 text-sm" style={{ opacity: page === totalPages ? 0.4 : 1 }}>Next →</button>
+        </div>
+      )}
+
+      <ProductModal open={modalOpen} onClose={() => { setModalOpen(false); setEditProduct(null); }}
+        onSave={handleSave} initial={editProduct} />
+      <DeleteConfirm open={!!deleteTarget} onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete} name={deleteTarget?.name} />
     </div>
   );
 }

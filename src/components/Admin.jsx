@@ -1,276 +1,206 @@
-import React from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
-import {
-  Users,
-  Package,
-  ShoppingBag,
-  BarChart3,
-  Settings,
-  TrendingUp,
-  DollarSign
-} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Link, Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import api from "../utils/api";
+
+function useCountUp(target) {
+  const [count, setCount] = useState(0);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || !target) return;
+    started.current = true;
+    const duration = 1200;
+    const start = Date.now();
+    const step = () => {
+      const progress = Math.min((Date.now() - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(ease * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target]);
+  return count;
+}
+
+function StatCard({ label, value, icon, color, prefix = "", suffix = "" }) {
+  const count = useCountUp(typeof value === "number" ? value : 0);
+  return (
+    <div className="stat-card group">
+      <div className="flex items-start justify-between mb-3">
+        <div className="text-3xl">{icon}</div>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center opacity-20 group-hover:opacity-30 transition-opacity"
+          style={{ background: color }} />
+      </div>
+      <div className="font-heading text-4xl mb-1" style={{ color }}>
+        {prefix}{typeof value === "number" ? count.toLocaleString() : value}{suffix}
+      </div>
+      <div className="text-steel text-xs font-body uppercase tracking-wider">{label}</div>
+    </div>
+  );
+}
 
 export default function Admin() {
-  const location = useLocation();
+  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ users: 0, products: 0, orders: 0, revenue: 0 });
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const isActive = (path) => {
-    if (path === '/admin' && location.pathname === '/admin') return true;
-    if (path !== '/admin' && location.pathname.includes(path)) return true;
-    return false;
-  };
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [usersRes, productsRes, ordersRes] = await Promise.all([
+          api.get("/api/users?limit=1"),
+          api.get("/api/products?limit=1"),
+          api.get("/api/orders?limit=5"),
+        ]);
+        const revenue = (ordersRes.data.orders || []).reduce((s, o) => s + (o.totalAmount || 0), 0);
+        setStats({
+          users: usersRes.data.count || 0,
+          products: productsRes.data.count || 0,
+          orders: ordersRes.data.count || 0,
+          revenue,
+        });
+        setRecentOrders(ordersRes.data.orders?.slice(0, 5) || []);
+      } catch {}
+    };
+    fetchStats();
+  }, []);
 
-  // Sidebar items
-  const sidebarItems = [
-    { path: '/admin', label: 'Users', icon: Users },
-    { path: '/admin/products', label: 'Products', icon: Package },
-    { path: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-  ];
+  const navLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-body transition-all ${isActive ? "text-obsidian font-medium" : "text-steel hover:text-chrome hover:bg-white/05"}`;
 
-  // Dashboard stats
-  const stats = [
-    { label: 'Total Users', value: '1,234', icon: Users, color: '#667eea' },
-    { label: 'Total Products', value: '89', icon: Package, color: '#f093fb' },
-    { label: 'Total Orders', value: '456', icon: ShoppingBag, color: '#4facfe' },
-    { label: 'Revenue', value: '₹12,345', icon: DollarSign, color: '#00f2fe' },
+  const sidebarActiveStyle = { background: "linear-gradient(135deg, #B87333, #D4AF37)" };
+
+  const navItems = [
+    { to: "/admin", label: "Dashboard", icon: "⬛", end: true },
+    { to: "/admin/users", label: "Users", icon: "👥" },
+    { to: "/admin/products", label: "Products", icon: "📦" },
+    { to: "/admin/orders", label: "Orders", icon: "🧾" },
   ];
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0f172a',
-      color: '#f1f5f9',
-      fontFamily: 'Inter, Arial, sans-serif',
-      animation: 'fadeIn 1s'
-    }}>
-      <div style={{
-        display: 'flex',
-        maxWidth: '1700px',
-        margin: '0 auto',
-        padding: '0 24px',
-        gap: '36px'
-      }}>
-        {/* Sidebar — now very wide and always far left */}
-        <aside
-          style={{
-            minWidth: '400px',
-            maxWidth: '460px',
-            alignSelf: 'flex-start',
-            background: '#181e2c',
-            borderRadius: '22px',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.21)',
-            padding: '48px 36px 32px 36px',
-            marginTop: '48px',
-            position: 'sticky',
-            left: 0,
-            top: '32px',
-            height: 'fit-content',
-            animation: 'slideLeft 0.7s'
-          }}
-        >
-          <h3 style={{
-            marginBottom: '38px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            color: '#e0e7ff',
-            fontWeight: '800',
-            fontSize: '28px',
-            letterSpacing: '.7px'
-          }}>
-            <Settings size={28} />
-            Management
-          </h3>
-          <nav style={{
-            display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '40px'
-          }}>
-            {sidebarItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '20px',
-                  padding: '18px 28px',
-                  borderRadius: '13px',
-                  textDecoration: 'none',
-                  color: isActive(item.path) ? '#fff' : '#f1f5f9',
-                  background: isActive(item.path)
-                    ? 'linear-gradient(90deg,#6366f1cc,#4f46e5f5)'
-                    : 'transparent',
-                  fontWeight: isActive(item.path) ? '800' : '600',
-                  border: isActive(item.path)
-                    ? 'none'
-                    : '1px solid #334155',
-                  fontSize: '18px',
-                  boxShadow: isActive(item.path) ? '0 4px 20px #6366f160' : 'none',
-                  transition: 'all 0.22s',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={e => {
-                  if (!isActive(item.path)) e.target.style.background = "#334155";
-                }}
-                onMouseLeave={e => {
-                  if (!isActive(item.path)) e.target.style.background = "transparent";
-                }}
-              >
-                <item.icon size={24} />
-                {item.label}
-              </Link>
+    <div className="min-h-screen flex bg-metal-radial">
+      {/* Sidebar */}
+      <aside className={`sidebar flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "w-56" : "w-16"}`} style={{ minHeight: "calc(100vh - 64px)" }}>
+        <div className="flex flex-col h-full py-6">
+          <button onClick={() => setSidebarOpen((p) => !p)}
+            className="mx-3 mb-6 p-2 rounded-lg text-steel hover:text-chrome hover:bg-white/5 transition-colors text-center">
+            {sidebarOpen ? "◀" : "▶"}
+          </button>
+          <nav className="flex flex-col gap-1 px-3 flex-1">
+            {navItems.map(({ to, label, icon, end }) => (
+              <NavLink key={to} to={to} end={end}
+                style={({ isActive }) => isActive ? sidebarActiveStyle : {}}
+                className={navLinkClass}>
+                <span className="text-base flex-shrink-0">{icon}</span>
+                {sidebarOpen && <span>{label}</span>}
+              </NavLink>
             ))}
           </nav>
-          {/* Quick Stats Box — larger, clearly separated */}
-          <div style={{
-            background: '#162038',
-            borderRadius: '18px',
-            border: '1.5px solid #25304b',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-            padding: '36px 28px 18px 28px',
-            marginBottom: '10px',
-            animation: 'scaleIn 0.7s'
-          }}>
-            <h4 style={{
-              marginBottom: '26px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '13px',
-              fontSize: '21px',
-              fontWeight: '800',
-              color: '#e0e7ff'
-            }}>
-              <TrendingUp size={22} />
-              Quick Stats
-            </h4>
-            <div style={{ fontSize: '18px', color: '#b6bedc', lineHeight: 1.8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '19px' }}>
-                <span>Active Users:</span>
-                <span style={{ fontWeight: '700', color: '#6366f1', fontSize: '21px' }}>892</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '19px' }}>
-                <span>Pending Orders:</span>
-                <span style={{ fontWeight: '700', color: '#fbbf24', fontSize: '21px' }}>23</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Low Stock:</span>
-                <span style={{ fontWeight: '700', color: '#ef4444', fontSize: '21px' }}>5</span>
-              </div>
-            </div>
+          <div className="px-3 pt-4 border-t border-white/05">
+            <NavLink to="/product"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-body text-steel hover:text-chrome hover:bg-white/05 transition-all">
+              <span>🏪</span>{sidebarOpen && "Store Front"}
+            </NavLink>
           </div>
-        </aside>
+        </div>
+      </aside>
 
-        {/* Main & Stats */}
-        <main style={{ flex: 1 }}>
-          <div style={{ marginTop: '54px', marginBottom: '32px', animation: 'slideDown 0.8s' }}>
-            <h1 style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '18px',
-              marginBottom: '13px',
-              fontSize: '44px',
-              fontWeight: 900,
-              color: '#e0e7ff',
-              letterSpacing: '1.2px'
-            }}>
-              <BarChart3 size={44} color="#3b82f6" />
-              Admin Dashboard
-            </h1>
-            <p style={{ color: '#94a3b8', fontSize: '18px' }}>
-              Manage your store, users, and orders from this central dashboard.
-            </p>
-          </div>
-          {/* Stats Cards */}
-          <div className="stats-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '32px',
-            marginBottom: '38px'
-          }}>
-            {stats.map((stat, index) => (
-              <div key={index}
-                className="stat-card"
-                style={{
-                  padding: '30px',
-                  borderRadius: '18px',
-                  background: '#1e293b',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center',
-                  animation: `scaleIn 0.7s ${index * 0.11}s backwards`
-                }}>
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '19px',
-                  background: `linear-gradient(135deg, ${stat.color}20 0, ${stat.color}08 90%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '21px',
-                  border: `3px solid ${stat.color}44`,
-                  boxShadow: `0 3px 20px ${stat.color}12`
-                }}>
-                  <stat.icon size={34} color={stat.color} />
-                </div>
-                <div style={{ fontSize: '31px', fontWeight: 800, marginBottom: '12px', color: '#fff' }}>
-                  {stat.value}
-                </div>
-                <div style={{ fontSize: '17px', color: '#90a2cf' }}>
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* Outlet/Main Content Panel */}
-          <div style={{
-            background: '#1e293b',
-            borderRadius: '18px',
-            padding: '38px 38px',
-            minHeight: '480px',
-            boxShadow: '0 8px 22px rgba(0,0,0,0.15)',
-            animation: 'fadeIn 1.1s'
-          }}>
-            <Outlet />
-          </div>
-        </main>
+      {/* Main content */}
+      <div className="flex-1 overflow-auto">
+        {/* Check if we're on the root admin page to show dashboard */}
+        <div className="p-6 lg:p-8">
+          {/* Dashboard content (only on index) */}
+          <Outlet context={{ stats, recentOrders }} />
+          {/* Fallback for /admin route — shows when no child route Outlet renders */}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// This is the admin index/dashboard, rendered at /admin
+export function AdminDashboard() {
+  const [stats, setStats] = useState({ users: 0, products: 0, orders: 0, revenue: 0 });
+  const [recentOrders, setRecentOrders] = useState([]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [usersRes, productsRes, ordersRes] = await Promise.all([
+          api.get("/api/users?limit=1"),
+          api.get("/api/products?limit=1"),
+          api.get("/api/orders?limit=5"),
+        ]);
+        const allOrdersRevenue = ordersRes.data.orders || [];
+        const revenue = allOrdersRevenue.reduce((s, o) => s + (o.totalAmount || 0), 0);
+        setStats({
+          users: usersRes.data.count || 0,
+          products: productsRes.data.count || 0,
+          orders: ordersRes.data.count || 0,
+          revenue,
+        });
+        setRecentOrders(allOrdersRevenue.slice(0, 5));
+      } catch {}
+    };
+    fetchStats();
+  }, []);
+
+  const fmtPrice = (p) => `₹${Number(p).toLocaleString("en-IN")}`;
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="font-heading text-5xl text-gradient-steel mb-1">DASHBOARD</h1>
+        <p className="text-steel text-sm font-body">Welcome back, Admin</p>
       </div>
 
-      {/* Animations and Responsive */}
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0);} }
-        @keyframes slideLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0);} }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.89);} to { opacity: 1; transform: scale(1);} }
-        @media (max-width: 1100px) {
-          div[style*="display: flex"][style*="max-width:"] {
-            flex-direction: column !important;
-            gap: 34px !important;
-          }
-          aside {
-            min-width: 100% !important;
-            max-width: 100% !important;
-            margin-bottom: 48px !important;
-            position: relative !important;
-            padding: 38px 16px 24px 16px !important;
-          }
-          main {
-            width: 100% !important;
-            min-width: 0 !important;
-          }
-        }
-        @media (max-width: 700px) {
-          .stats-grid {
-            grid-template-columns: 1fr;
-          }
-          main > div {
-            padding: 12px 6px !important;
-          }
-          aside {
-            padding: 22px 8px !important;
-          }
-        }
-      `}</style>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <StatCard label="Total Users"    value={stats.users}    icon="👥" color="#B87333" />
+        <StatCard label="Total Products" value={stats.products} icon="📦" color="#C0C0D0" />
+        <StatCard label="Total Orders"   value={stats.orders}   icon="🧾" color="#D4AF37" />
+        <StatCard label="Revenue"        value={stats.revenue}  icon="💰" color="#22c55e" prefix="₹" />
+      </div>
+
+      <div>
+        <h2 className="font-heading text-2xl text-gradient-copper mb-4">RECENT ORDERS</h2>
+        <div className="metal-card overflow-hidden">
+          <table className="metal-table">
+            <thead><tr>
+              <th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th>
+            </tr></thead>
+            <tbody>
+              {recentOrders.length === 0 && (
+                <tr><td colSpan={5} className="text-center py-8 text-steel">No orders yet</td></tr>
+              )}
+              {recentOrders.map((o) => (
+                <tr key={o._id}>
+                  <td className="font-mono text-xs">{o._id.slice(-8).toUpperCase()}</td>
+                  <td className="text-xs">{o.userEmail}</td>
+                  <td className="font-heading text-lg text-gradient-gold">{fmtPrice(o.totalAmount)}</td>
+                  <td><span className={`badge badge-${o.status?.toLowerCase().replace(" ", "-") === "in-transit" ? "transit" : o.status?.toLowerCase()}`}>{o.status}</span></td>
+                  <td className="text-xs text-steel">{new Date(o.createdAt).toLocaleDateString("en-IN")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-4">
+        {[{ to: "/admin/products", label: "Manage Products", icon: "📦", desc: "Add, edit, delete products" },
+          { to: "/admin/orders", label: "Manage Orders", icon: "🧾", desc: "Update order statuses" },
+          { to: "/admin", label: "Manage Users", icon: "👥", desc: "View and edit users" }
+        ].map(({ to, label, icon, desc }) => (
+          <Link key={to} to={to}
+            className="metal-card p-6 group hover:border-copper transition-all">
+            <div className="text-3xl mb-3">{icon}</div>
+            <h3 className="font-heading text-xl text-gradient-copper mb-1">{label}</h3>
+            <p className="text-steel text-xs font-body">{desc}</p>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
